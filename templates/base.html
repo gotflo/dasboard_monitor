@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring et collecte données</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- CSS Principal -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modules/neurosity.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modules/thought_capture.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
+                <p>Monitoring unifié/collecte de données</p>
+            </div>
+            
+            <div class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Navigation</div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link active" data-module="dashboard">
+                            <i class="nav-icon fas fa-home"></i>
+                            <span class="nav-text">Accueil</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Capteurs & Monitoring</div>
+                    
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-module="polar">
+                            <i class="nav-icon fas fa-heartbeat" style="color: #ff6b6b;"></i>
+                            <div class="nav-text">
+                                <div>Polar</div>
+                                <div class="nav-subtitle">H10 / Verity Sense</div>
+                            </div>
+                            <span class="nav-badge">ECG</span>
+                        </a>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-module="eeg_crown">
+                            <i class="nav-icon fas fa-brain" style="color: #4ecdc4;"></i>
+                            <div class="nav-text">
+                                <div>EEG Crown</div>
+                                <div class="nav-subtitle">Neurosity</div>
+                            </div>
+                            <span class="nav-badge">EEG</span>
+                        </a>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-module="thermal_camera">
+                            <i class="nav-icon fas fa-thermometer-half" style="color: #45b7d1;"></i>
+                            <div class="nav-text">
+                                <div>Caméra Thermique</div>
+                                <div class="nav-subtitle">Détection IR</div>
+                            </div>
+                            <span class="nav-badge">IR</span>
+                        </a>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-module="gazepoint">
+                            <i class="nav-icon fas fa-eye" style="color: #96ceb4;"></i>
+                            <div class="nav-text">
+                                <div>Gazepoint</div>
+                                <div class="nav-subtitle">Suivi oculaire</div>
+                            </div>
+                            <span class="nav-badge">Eye</span>
+                        </a>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <a href="#" class="nav-link" data-module="thought_capture">
+                            <i class="nav-icon fas fa-lightbulb" style="color: #feca57;"></i>
+                            <div class="nav-text">
+                                <div>Capture de la Pensée</div>
+                                <div class="nav-subtitle">Micro</div>
+                            </div>
+                            <span class="nav-badge">Micro</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Contenu principal simplifié -->
+        <main class="main-content">
+            <div class="content-wrapper">
+                <!-- Zone de contenu dynamique (sans en-tête) -->
+                <div class="dynamic-content" id="main-content">
+                    <!-- Le contenu sera chargé ici via JavaScript -->
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Container pour les toasts du module -->
+    <div id="neurosityToastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 450px;"></div>
+
+    <!-- Chargement des scripts externes via CDN (Chart.js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='js/websocket_client.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modules/thought_capture.js') }}"></script>
+<!--    <script src="{{ url_for('static', filename='js/modules/neurosity.js') }}"></script>-->
+</body>
+</html>

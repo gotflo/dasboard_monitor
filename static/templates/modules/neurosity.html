@@ -1,0 +1,266 @@
+<!-- Loader initial -->
+   <div class="neuro_initial-loader" id="initialLoader">
+       <div class="neuro_loader-content">
+           <div class="neuro_loader-logo">Neurosity</div>
+           <div class="neuro_loader-spinner"></div>
+           <div class="neuro_loader-text">Chargement de l'interface...</div>
+       </div>
+   </div>
+
+   <!-- Navigation -->
+   <nav class="neuro_navbar">
+       <div class="neuro_nav-container">
+           <div class="neuro_logo">Neurosity Monitor</div>
+
+           <div class="neuro_nav-controls">
+               <!-- Statut de connexion -->
+               <div class="neuro_status-indicator">
+                   <div class="neuro_status-dot neuro_status-disconnected" id="connectionStatus"></div>
+                   <span id="connectionText">Déconnecté</span>
+               </div>
+
+               <!-- Statut du dispositif -->
+               <div class="neuro_status-indicator" id="deviceStatusIndicator" style="display: none;">
+                   <div class="neuro_status-dot neuro_status-disconnected" id="deviceStatusDot"></div>
+                   <span id="deviceStatusText">Dispositif</span>
+               </div>
+
+               <!-- Statut d'enregistrement -->
+               <div class="neuro_status-indicator neuro_recording-active" id="recordingStatus" style="display: none;">
+                   <div class="neuro_status-dot neuro_status-recording"></div>
+                   <span>🔴 Enregistrement...</span>
+               </div>
+
+               <!-- Boutons de contrôle -->
+               <button class="neuro_btn neuro_btn-primary" id="connectBtn" onclick="connectDevice()" title="Connecter (Ctrl+K)">
+                   <span>🔗</span>
+                   <span class="neuro_btn-text">Connecter</span>
+               </button>
+
+               <button class="neuro_btn neuro_btn-success" id="recordBtn" onclick="toggleRecording()" disabled title="Enregistrer (Ctrl+R)">
+                   <span>⏺️</span>
+                   <span class="neuro_btn-text">Enregistrer</span>
+               </button>
+
+               <button class="neuro_btn neuro_btn-outline" id="downloadBtn" onclick="downloadData()" disabled title="Télécharger">
+                   <span>⬇️</span>
+                   <span class="neuro_btn-text">Télécharger</span>
+               </button>
+           </div>
+       </div>
+   </nav>
+
+   <!-- Main Content -->
+   <main class="neuro_main-content">
+       <div class="neuro_container">
+           <!-- Métriques principales -->
+           <div class="neuro_metrics-container">
+               <!-- Métrique Calme -->
+               <div class="neuro_metric-card">
+                   <div class="neuro_progress-label">Calme</div>
+                   <div class="neuro_circular-progress">
+                       <svg>
+                           <defs>
+                               <linearGradient id="calmGradient">
+                                   <stop offset="0%" style="stop-color:#6366f1"/>
+                                   <stop offset="100%" style="stop-color:#8b5cf6"/>
+                               </linearGradient>
+                           </defs>
+                           <circle class="neuro_progress-bg" cx="75" cy="75" r="65"></circle>
+                           <circle class="neuro_progress-calm" cx="75" cy="75" r="65" id="calmProgress"></circle>
+                       </svg>
+                       <div class="neuro_progress-value" id="calmValue">0%</div>
+                   </div>
+                   <div class="neuro_timestamp" id="calmTimestamp">--</div>
+               </div>
+
+               <!-- Métrique Concentration -->
+               <div class="neuro_metric-card">
+                   <div class="neuro_progress-label">Concentration</div>
+                   <div class="neuro_circular-progress">
+                       <svg>
+                           <defs>
+                               <linearGradient id="focusGradient">
+                                   <stop offset="0%" style="stop-color:#10b981"/>
+                                   <stop offset="100%" style="stop-color:#34d399"/>
+                               </linearGradient>
+                           </defs>
+                           <circle class="neuro_progress-bg" cx="75" cy="75" r="65"></circle>
+                           <circle class="neuro_progress-focus" cx="75" cy="75" r="65" id="focusProgress"></circle>
+                       </svg>
+                       <div class="neuro_progress-value" id="focusValue">0%</div>
+                   </div>
+                   <div class="neuro_timestamp" id="focusTimestamp">--</div>
+               </div>
+           </div>
+
+           <!-- Graphique des ondes cérébrales -->
+           <div class="neuro_charts-container">
+               <div class="neuro_chart-card">
+                   <h3 class="neuro_card-title">Ondes Cérébrales en Temps Réel</h3>
+                   <div class="neuro_timestamp" id="brainwavesTimestamp">Dernière mise à jour: --</div>
+                   <div class="neuro_chart-container">
+                       <canvas id="brainwavesChart"></canvas>
+                   </div>
+               </div>
+           </div>
+
+           <!-- Signaux EEG Bruts -->
+           <div class="neuro_chart-card neuro_eeg-raw-card">
+               <h3 class="neuro_card-title">Signaux EEG Bruts</h3>
+               <div class="neuro_timestamp" id="eegRawTimestamp">Dernière mise à jour: --</div>
+               <div class="neuro_eeg-raw-container">
+                   <canvas id="eegRawChart"></canvas>
+               </div>
+           </div>
+
+           <!-- Dashboard Grid -->
+           <div class="neuro_dashboard-grid">
+               <!-- Sessions Enregistrées -->
+               <div class="neuro_card neuro_sessions-card neuro_sessions-card-fixed">
+                   <div class="neuro_card-header">
+                       <h3 class="neuro_card-title">Sessions Enregistrées</h3>
+                       <div class="neuro_sessions-counter" id="sessionsCounter">0 session(s)</div>
+                   </div>
+
+                   <div class="neuro_sessions-scroll-container">
+                       <div id="sessionsList" class="neuro_sessions-empty">
+                           Connectez votre casque pour voir les sessions
+                       </div>
+                   </div>
+
+                   <div class="neuro_sessions-footer">
+                       <div class="neuro_sessions-stats">
+                           <span class="neuro_sessions-stat">
+                               <span class="neuro_stat-icon">📊</span>
+                               <span class="neuro_stat-value" id="totalSessions">0</span>
+                               <span class="neuro_stat-label">sessions</span>
+                           </span>
+                           <span class="neuro_sessions-stat">
+                               <span class="neuro_stat-icon">💾</span>
+                               <span class="neuro_stat-value" id="totalSize">0 MB</span>
+                               <span class="neuro_stat-label">stockés</span>
+                           </span>
+                       </div>
+
+                       <button class="neuro_btn neuro_btn-outline neuro_sessions-refresh-btn" onclick="refreshSessions()">
+                           <span>🔄</span>
+                           <span class="neuro_btn-text">Actualiser</span>
+                       </button>
+                   </div>
+               </div>
+
+               <!-- Statut Système -->
+               <div class="neuro_card neuro_status-card">
+                   <h3 class="neuro_card-title">Statut du Système</h3>
+
+                   <div class="neuro_status-grid">
+                       <div class="neuro_status-item">
+                           <div class="neuro_status-label">
+                               <span>🔗</span>
+                               État de la connexion
+                           </div>
+                           <div class="neuro_status-value" id="systemConnectionStatus">Déconnecté</div>
+                       </div>
+
+                       <div class="neuro_status-item">
+                           <div class="neuro_status-label">
+                               <span>🎯</span>
+                               Monitoring actif
+                           </div>
+                           <div class="neuro_status-value" id="systemMonitoringStatus">Arrêté</div>
+                       </div>
+
+                       <div class="neuro_status-item">
+                           <div class="neuro_status-label">
+                               <span>🔋</span>
+                               Batterie
+                           </div>
+                           <div class="neuro_status-value" id="systemBattery">
+                               <span class="battery-medium">🔋 -- --</span>
+                           </div>
+                       </div>
+                   </div>
+
+                   <!-- Signal Quality -->
+                   <div class="neuro_signal-quality-section">
+                       <div class="neuro_status-label" style="margin-bottom: 1.5rem; font-size: 1rem; font-weight: 600; color: #1e293b;">
+                           Signal Quality
+                       </div>
+                       <div class="neuro_electrode-map-modern">
+                           <svg viewBox="0 0 300 300" class="neuro_brain-svg">
+                               <!-- Contours du cerveau -->
+                               <path d="M70 50 C30 150, 30 220, 100 260" stroke="#e2e8f0" stroke-width="4" fill="none" opacity="0.8"/>
+                               <path d="M230 50 C270 150, 270 220, 200 260" stroke="#e2e8f0" stroke-width="4" fill="none" opacity="0.8"/>
+                               <path d="M100 260 Q150 280, 200 260" stroke="#e2e8f0" stroke-width="4" fill="none" opacity="0.8"/>
+
+                               <!-- Connexions internes -->
+                               <path d="M70 50 Q72 40, 85 60 Q92 85, 95 110 Q92 130, 90 150" stroke="#e2e8f0" stroke-width="2.5" fill="none" opacity="0.6"/>
+                               <path d="M230 50 Q228 40, 215 60 Q208 85, 205 110 Q208 130, 210 150" stroke="#e2e8f0" stroke-width="2.5" fill="none" opacity="0.6"/>
+
+                               <!-- Électrodes -->
+                               <g class="neuro_electrode-svg neuro_quality-poor" data-electrode="F5" transform="translate(70, 50)">
+                                   <circle r="12" class="neuro_electrode-circle"/>
+                                   <text y="-18" class="neuro_electrode-svg-label">F5</text>
+                                   <text y="24" class="neuro_electrode-svg-value">--%</text>
+                               </g>
+
+                               <g class="neuro_electrode-svg neuro_quality-poor" data-electrode="F6" transform="translate(230, 50)">
+                                   <circle r="12" class="neuro_electrode-circle"/>
+                                   <text y="-18" class="neuro_electrode-svg-label">F6</text>
+                                   <text y="24" class="neuro_electrode-svg-value">--%</text>
+                               </g>
+
+                               <g class="neuro_electrode-svg neuro_quality-poor" data-electrode="C3" transform="translate(95, 110)">
+                                   <circle r="12" class="neuro_electrode-circle"/>
+                                   <text y="-18" class="neuro_electrode-svg-label">C3</text>
+                                   <text y="24" class="neuro_electrode-svg-value">--%</text>
+                               </g>
+
+                               <g class="neuro_electrode-svg neuro_quality-poor" data-electrode="C4" transform="translate(205, 110)">
+                                   <circle r="12" class="neuro_electrode-circle"/>
+                                   <text y="-18" class="neuro_electrode-svg-label">C4</text>
+                                   <text y="24" class="neuro_electrode-svg-value">--%</text>
+                               </g>
+
+                               <g class="neuro_electrode-svg neuro_quality-poor" data-electrode="CP3" transform="translate(90, 150)">
+                                   <circle r="12" class="neuro_electrode-circle"/>
+                                   <text y="-18" class="neuro_electrode-svg-label">CP3</text>
+                                   <text y="24" class="neuro_electrode-svg-value">--%</text>
+                               </g>
+
+                               <g class="neuro_electrode-svg neuro_quality-poor" data-electrode="CP4" transform="translate(210, 150)">
+                                   <circle r="12" class="neuro_electrode-circle"/>
+                                   <text y="-18" class="neuro_electrode-svg-label">CP4</text>
+                                   <text y="24" class="neuro_electrode-svg-value">--%</text>
+                               </g>
+
+                               <g class="neuro_electrode-svg neuro_quality-poor" data-electrode="PO3" transform="translate(100, 260)">
+                                   <circle r="12" class="neuro_electrode-circle"/>
+                                   <text y="26" class="neuro_electrode-svg-label">PO3</text>
+                                   <text y="38" class="neuro_electrode-svg-value">--%</text>
+                               </g>
+
+                               <g class="neuro_electrode-svg neuro_quality-poor" data-electrode="PO4" transform="translate(200, 260)">
+                                   <circle r="12" class="neuro_electrode-circle"/>
+                                   <text y="26" class="neuro_electrode-svg-label">PO4</text>
+                                   <text y="38" class="neuro_electrode-svg-value">--%</text>
+                               </g>
+                           </svg>
+                       </div>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </main>
+
+   <!-- Footer -->
+   <footer class="neuro_app-footer">
+       <div class="neuro_footer-content">
+           Neurosity Crown Monitor
+           <span class="neuro_footer-separator">•</span>
+           Monitoring en temps réel
+           <span class="neuro_footer-separator">•</span>
+           <span id="currentTime"></span>
+       </div>
+   </footer>

@@ -1,0 +1,759 @@
+<!--
+    ✅ TEMPLATE MODULAIRE NEUROSITY - POUR INTÉGRATION DASHBOARD
+    Compatible avec base.html - Conserve TOUTES les fonctionnalités
+    S'affiche AVEC la sidebar du dashboard
+-->
+
+<!-- ✅ CSS spécifiques au module (seulement les liens) -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/modules/neurosity/main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/modules/neurosity/components.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/modules/neurosity/animations.css') }}">
+
+<!-- ✅ Styles critiques inline pour le module -->
+<style>
+    /* ===== STYLES NEUROSITY MODULE - CONSERVÉS INTÉGRALEMENT ===== */
+    
+    /* Loader initial pour le module */
+    .neurosity-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    
+    .neurosity-loader.hidden {
+        opacity: 0;
+        visibility: hidden;
+    }
+    
+    .neurosity-loader-content {
+        text-align: center;
+        animation: neurityFadeIn 0.8s ease-out;
+    }
+    
+    .neurosity-loader-logo {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        animation: neurityFloat 2s ease-in-out infinite;
+    }
+    
+    .neurosity-loader-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(99, 102, 241, 0.1);
+        border-top: 4px solid #6366f1;
+        border-radius: 50%;
+        animation: neuritySpin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+    
+    .neurosity-loader-text {
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    /* Animations spécifiques au module */
+    @keyframes neurityFadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes neurityFloat {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes neuritySpin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Navigation spécifique au module */
+    .neurosity-navbar {
+        background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(248, 250, 252, 0.9) 100%);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(226, 232, 240, 0.3);
+        padding: 1rem 2rem;
+        box-shadow:
+            0 4px 20px rgba(0, 0, 0, 0.04),
+            0 1px 3px rgba(0, 0, 0, 0.06);
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .neurosity-navbar::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg,
+            transparent,
+            rgba(99, 102, 241, 0.3),
+            transparent);
+    }
+
+    .neurosity-nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .neurosity-logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .neurosity-logo:hover {
+        transform: scale(1.05);
+    }
+
+    .neurosity-nav-controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    /* États actifs pour le module */
+    .neurosity-recording-active {
+        animation: neurityRecordingPulse 2s infinite;
+    }
+
+    @keyframes neurityRecordingPulse {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+        }
+        50% {
+            box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+        }
+    }
+
+    .neurosity-connected-active .status-dot {
+        animation: neurityConnectedGlow 2s infinite;
+    }
+
+    @keyframes neurityConnectedGlow {
+        0%, 100% {
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+        50% {
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8), 0 0 20px rgba(16, 185, 129, 0.6);
+        }
+    }
+
+    /* Conteneur principal du module */
+    .neurosity-module-container {
+        padding: 1rem;
+        animation: neuritySlideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes neuritySlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* Support des préférences de mouvement réduit pour le module */
+    @media (prefers-reduced-motion: reduce) {
+        .neurosity-module-container,
+        .neurosity-loader-content,
+        .neurosity-logo {
+            animation: none !important;
+            transition: none !important;
+        }
+    }
+
+    /* Responsive spécifique au module */
+    @media (max-width: 768px) {
+        .neurosity-navbar {
+            padding: 1rem;
+        }
+
+        .neurosity-nav-container {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .neurosity-nav-controls {
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .neurosity-logo {
+            font-size: 1.3rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .neurosity-nav-controls {
+            flex-direction: column;
+            width: 100%;
+            gap: 0.5rem;
+        }
+
+        .neurosity-nav-controls .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Indicateur de module intégré */
+    /*.neurosity-module-indicator {*/
+    /*    position: absolute;*/
+    /*    top: -8px;*/
+    /*    right: 20px;*/
+    /*    background: linear-gradient(135deg, #4ecdc4, #44a08d);*/
+    /*    color: white;*/
+    /*    padding: 4px 12px;*/
+    /*    border-radius: 12px;*/
+    /*    font-size: 0.7rem;*/
+    /*    font-weight: 600;*/
+    /*    text-transform: uppercase;*/
+    /*    letter-spacing: 0.5px;*/
+    /*    box-shadow: 0 2px 8px rgba(78, 205, 196, 0.3);*/
+    /*}*/
+</style>
+
+<!-- ✅ Loader initial du module -->
+<div class="neurosity-loader" id="neurityLoader">
+    <div class="neurosity-loader-content">
+        <div class="neurosity-loader-logo">🧠 Neurosity</div>
+        <div class="neurosity-loader-spinner"></div>
+        <div class="neurosity-loader-text">Chargement du module EEG...</div>
+    </div>
+</div>
+
+<!-- ✅ Conteneur principal du module -->
+<div class="neurosity-module-container" id="neurityModuleContainer">
+    
+    <!-- ✅ Navigation du module (CONSERVÉE INTÉGRALEMENT) -->
+    <nav class="neurosity-navbar">
+        <div class="neurosity-nav-container">
+            <div class="neurosity-logo">
+                🧠 Neurosity Monitor
+<!--                <div class="neurosity-module-indicator">MODULE EEG</div>-->
+            </div>
+            
+            <div class="neurosity-nav-controls">
+                <!-- Statut de connexion principal -->
+                <div class="status-indicator">
+                    <div class="status-dot status-disconnected" id="connectionStatus"></div>
+                    <span id="connectionText">Déconnecté</span>
+                </div>
+                
+                <!-- Statut du dispositif (caché par défaut) -->
+                <div class="status-indicator" id="deviceStatusIndicator" style="display: none;">
+                    <div class="status-dot status-disconnected" id="deviceStatusDot"></div>
+                    <span id="deviceStatusText">Dispositif</span>
+                </div>
+                
+                <!-- Statut d'enregistrement (caché par défaut) -->
+                <div class="status-indicator neurosity-recording-active" id="recordingStatus" style="display: none;">
+                    <div class="status-dot status-recording"></div>
+                    <span>🔴 Enregistrement...</span>
+                </div>
+                
+                <!-- ✅ Boutons de contrôle (CONSERVÉS INTÉGRALEMENT) -->
+                <button class="btn btn-primary" id="connectBtn" onclick="NeurityModule.connectDevice()" title="Connecter le casque Neurosity (Ctrl+K)">
+                    <span>🔗</span>
+                    <span class="btn-text">Connecter</span>
+                </button>
+
+                <button class="btn btn-success" id="recordBtn" onclick="NeurityModule.toggleRecording()" disabled title="Démarrer/Arrêter l'enregistrement (Ctrl+R)">
+                    <span>⏺️</span>
+                    <span class="btn-text">Enregistrer</span>
+                </button>
+
+                <button class="btn btn-outline" id="downloadBtn" onclick="NeurityModule.downloadData()" disabled title="Télécharger la dernière session">
+                    <span>⬇️</span>
+                    <span class="btn-text">Télécharger</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- ✅ Contenu principal (CONSERVÉ INTÉGRALEMENT) -->
+    <div class="container">
+        <!-- Messages système -->
+        <div id="messages"></div>
+
+        <!-- ✅ Métriques principales (CONSERVÉES INTÉGRALEMENT) -->
+        <div class="metrics-container">
+            <!-- Métrique Calme -->
+            <div class="metric-card">
+                <div class="progress-label">Calme</div>
+                <div class="circular-progress">
+                    <svg>
+                        <defs>
+                            <linearGradient id="neurityCalmGradient">
+                                <stop offset="0%" style="stop-color:#6366f1"/>
+                                <stop offset="100%" style="stop-color:#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                        <circle class="progress-bg" cx="75" cy="75" r="65"></circle>
+                        <circle class="progress-calm" cx="75" cy="75" r="65" id="calmProgress"></circle>
+                    </svg>
+                    <div class="progress-value" id="calmValue">0%</div>
+                </div>
+                <div class="timestamp" id="calmTimestamp">--</div>
+            </div>
+
+            <!-- Métrique Concentration -->
+            <div class="metric-card">
+                <div class="progress-label">Concentration</div>
+                <div class="circular-progress">
+                    <svg>
+                        <defs>
+                            <linearGradient id="neurityFocusGradient">
+                                <stop offset="0%" style="stop-color:#10b981"/>
+                                <stop offset="100%" style="stop-color:#34d399"/>
+                            </linearGradient>
+                        </defs>
+                        <circle class="progress-bg" cx="75" cy="75" r="65"></circle>
+                        <circle class="progress-focus" cx="75" cy="75" r="65" id="focusProgress"></circle>
+                    </svg>
+                    <div class="progress-value" id="focusValue">0%</div>
+                </div>
+                <div class="timestamp" id="focusTimestamp">--</div>
+            </div>
+        </div>
+
+        <!-- ✅ Graphiques des ondes cérébrales (CONSERVÉS INTÉGRALEMENT) -->
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3 class="card-title">Ondes Cérébrales en Temps Réel</h3>
+                <div class="timestamp" id="brainwavesTimestamp">Dernière mise à jour: --</div>
+                <div class="chart-container">
+                    <canvas id="brainwavesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ Gestion des sessions avec design moderne et hauteur fixe (CONSERVÉE INTÉGRALEMENT) -->
+        <div class="dashboard-grid">
+            <!-- Card Sessions Enregistrées avec HAUTEUR FIXE et scroll interne -->
+            <div class="card sessions-card sessions-card-fixed">
+                <div class="card-header">
+                    <h3 class="card-title">Sessions Enregistrées</h3>
+                    <div class="sessions-counter" id="sessionsCounter">0 session(s)</div>
+                </div>
+
+                <!-- Container scrollable avec hauteur fixe -->
+                <div class="sessions-scroll-container">
+                    <div id="sessionsList" class="sessions-empty">
+                        Connectez votre casque pour voir les sessions
+                    </div>
+                </div>
+
+                <!-- Footer fixe avec bouton et statistiques -->
+                <div class="sessions-footer">
+                    <div class="sessions-stats" id="sessionsStats">
+                        <span class="sessions-stat">
+                            <span class="stat-icon">📊</span>
+                            <span class="stat-value" id="totalSessions">0</span>
+                            <span class="stat-label">sessions</span>
+                        </span>
+                        <span class="sessions-stat">
+                            <span class="stat-icon">💾</span>
+                            <span class="stat-value" id="totalSize">0 MB</span>
+                            <span class="stat-label">stockés</span>
+                        </span>
+                    </div>
+
+                    <button class="btn btn-outline sessions-refresh-btn" onclick="refreshNeuritySessions()">
+                        <span>🔄</span>
+                        <span class="btn-text">Actualiser</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ✅ Card Statut Système avec design moderne (CONSERVÉE INTÉGRALEMENT) -->
+            <div class="card status-card">
+                <h3 class="card-title">Statut du Système</h3>
+
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">
+                            <span>🔗</span>
+                            État de la connexion
+                        </div>
+                        <div class="status-value" id="systemConnectionStatus">❌ Déconnecté</div>
+                    </div>
+
+                    <div class="status-item">
+                        <div class="status-label">
+                            <span>🎯</span>
+                            Monitoring actif
+                        </div>
+                        <div class="status-value" id="systemMonitoringStatus">⏹️ Arrêté</div>
+                    </div>
+
+                    <div class="status-item">
+                        <div class="status-label">
+                            <span>📡</span>
+                            Qualité du signal
+                        </div>
+                        <div class="status-value" id="systemSignalQuality">-- --</div>
+                    </div>
+
+                    <div class="status-item">
+                        <div class="status-label">
+                            <span>🔋</span>
+                            Batterie
+                        </div>
+                        <div class="status-value" id="systemBattery">-- --</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ Footer avec horloge (CONSERVÉ INTÉGRALEMENT) -->
+        <footer style="text-align: center; padding: 2rem; color: #94a3b8; font-size: 0.75rem; margin-top: 2rem; border-top: 1px solid rgba(226, 232, 240, 0.5);">
+            <div style="max-width: 1400px; margin: 0 auto;">
+                🧠 Neurosity Crown Monitor
+                <span style="margin: 0 0.5rem;">•</span>
+                Monitoring en temps réel
+                <span style="margin: 0 0.5rem;">•</span>
+                <span id="neurityCurrentTime"></span>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<!-- ✅ Scripts JavaScript inline (CONSERVÉS INTÉGRALEMENT) -->
+<script>
+    // ✅ Variables globales spécifiques au module (CONSERVÉES INTÉGRALEMENT)
+    window.NeurityAppUtils = {
+        isInitialized: false,
+        viewport: { width: 0, height: 0, isMobile: false, isTablet: false }
+    };
+
+    // ✅ Initialisation du module au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeNeurityModule();
+    });
+
+    /**
+     * ✅ Fonction d'initialisation du module (CONSERVÉE INTÉGRALEMENT)
+     */
+    function initializeNeurityModule() {
+        if (window.NeurityAppUtils.isInitialized) return;
+        
+        console.log('🎨 Initialisation du module Neurosity...');
+        
+        // Cacher le loader après un délai
+        setTimeout(hideNeurityLoader, 1000);
+        
+        // Initialiser l'horloge
+        initializeNeurityClock();
+        
+        // Gestion responsive
+        initializeNeurityResponsive();
+        
+        // Améliorer l'accessibilité
+        initializeNeurityAccessibility();
+        
+        // Gestion des erreurs globales
+        initializeNeurityErrorHandling();
+        
+        // Performance monitoring
+        initializeNeurityPerformanceMonitoring();
+        
+        // Détection de la connexion réseau
+        initializeNeurityNetworkDetection();
+        
+        // Initialiser animations
+        initializeNeurityAnimations();
+        
+        window.NeurityAppUtils.isInitialized = true;
+        console.log('✅ Module Neurosity initialisé avec la sidebar dashboard');
+    }
+
+    /**
+     * ✅ Gestion du loader du module (CONSERVÉE INTÉGRALEMENT)
+     */
+    function hideNeurityLoader() {
+        const loader = document.getElementById('neurityLoader');
+        
+        if (loader) {
+            loader.classList.add('hidden');
+            setTimeout(() => {
+                if (loader.parentNode) {
+                    loader.parentNode.removeChild(loader);
+                }
+            }, 500);
+        }
+    }
+
+    /**
+     * ✅ Horloge optimisée pour le module (CONSERVÉE INTÉGRALEMENT)
+     */
+    function initializeNeurityClock() {
+        const timeElement = document.getElementById('neurityCurrentTime');
+        if (!timeElement) return;
+        
+        function updateNeurityClock() {
+            try {
+                const now = new Date();
+                timeElement.textContent = now.toLocaleTimeString('fr-FR');
+            } catch (e) {
+                console.warn('Erreur mise à jour horloge Neurosity:', e);
+            }
+        }
+        
+        updateNeurityClock();
+        setInterval(updateNeurityClock, 1000);
+    }
+
+    /**
+     * ✅ Gestion responsive du module (CONSERVÉE INTÉGRALEMENT)
+     */
+    function initializeNeurityResponsive() {
+        function updateNeurityViewport() {
+            const viewport = {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                isMobile: window.innerWidth < 768,
+                isTablet: window.innerWidth >= 768 && window.innerWidth < 1024
+            };
+            
+            window.NeurityAppUtils.viewport = viewport;
+            
+            // CSS custom properties
+            document.documentElement.style.setProperty('--neurosity-vh', `${viewport.height * 0.01}px`);
+            
+            // Émettre un événement pour le module
+            window.dispatchEvent(new CustomEvent('neurityViewportChange', { detail: viewport }));
+        }
+        
+        window.addEventListener('resize', updateNeurityViewport);
+        window.addEventListener('orientationchange', updateNeurityViewport);
+        updateNeurityViewport(); // Appel initial
+    }
+
+    /**
+     * ✅ Accessibilité du module (CONSERVÉE INTÉGRALEMENT)
+     */
+    function initializeNeurityAccessibility() {
+        // Navigation au clavier
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                document.body.classList.add('neurosity-keyboard-navigation');
+            }
+        });
+        
+        document.addEventListener('mousedown', function() {
+            document.body.classList.remove('neurosity-keyboard-navigation');
+        });
+        
+        // Raccourcis clavier du module
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'k':
+                        e.preventDefault();
+                        if (window.NeurityModule && window.NeurityModule.connectDevice) {
+                            window.NeurityModule.connectDevice();
+                        }
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        if (window.NeurityModule && window.NeurityModule.toggleRecording) {
+                            window.NeurityModule.toggleRecording();
+                        }
+                        break;
+                }
+            }
+        });
+    }
+
+    /**
+     * ✅ Gestion d'erreurs du module (CONSERVÉE INTÉGRALEMENT)
+     */
+    function initializeNeurityErrorHandling() {
+        window.addEventListener('error', function(e) {
+            console.error('Erreur module Neurosity:', e.error);
+            if (window.NeurityModule && window.NeurityModule.showNeurityToast) {
+                window.NeurityModule.showNeurityToast('❌ Erreur dans le module Neurosity', 'error');
+            }
+        });
+        
+        // Promesses non gérées
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Promise rejetée Neurosity:', e.reason);
+            if (window.NeurityModule && window.NeurityModule.showNeurityToast) {
+                window.NeurityModule.showNeurityToast('❌ Erreur asynchrone Neurosity', 'error');
+            }
+        });
+    }
+
+    /**
+     * ✅ Monitoring de performance du module (CONSERVÉ INTÉGRALEMENT)
+     */
+    function initializeNeurityPerformanceMonitoring() {
+        if (!('performance' in window)) return;
+        
+        setTimeout(() => {
+            try {
+                const perfData = performance.getEntriesByType('navigation')[0];
+                if (perfData) {
+                    const metrics = {
+                        loadTime: Math.round(perfData.loadEventEnd - perfData.fetchStart),
+                        domReady: Math.round(perfData.domContentLoadedEventEnd - perfData.fetchStart)
+                    };
+                    console.log('⚡ Performance module Neurosity:', metrics);
+                    
+                    // Alerter si les performances sont dégradées
+                    if (metrics.loadTime > 5000) {
+                        console.warn('⚠️ Temps de chargement élevé module Neurosity:', metrics.loadTime + 'ms');
+                    }
+                }
+            } catch (e) {
+                console.warn('Erreur monitoring performance Neurosity:', e);
+            }
+        }, 100);
+    }
+
+    /**
+     * ✅ Détection réseau du module (CONSERVÉE INTÉGRALEMENT)
+     */
+    function initializeNeurityNetworkDetection() {
+        function updateNeurityNetworkStatus() {
+            const isOnline = navigator.onLine;
+            const moduleContainer = document.getElementById('neurityModuleContainer');
+            if (moduleContainer) {
+                moduleContainer.classList.toggle('neurosity-offline', !isOnline);
+            }
+            
+            if (window.NeurityModule && window.NeurityModule.showNeurityToast) {
+                if (isOnline) {
+                    window.NeurityModule.showNeurityToast('🌐 Connexion rétablie (Module EEG)', 'success', 2000);
+                } else {
+                    window.NeurityModule.showNeurityToast('📱 Mode hors ligne (Module EEG)', 'warning', 5000);
+                }
+            }
+        }
+        
+        window.addEventListener('online', updateNeurityNetworkStatus);
+        window.addEventListener('offline', updateNeurityNetworkStatus);
+    }
+
+    /**
+     * ✅ Animations du module (CONSERVÉES INTÉGRALEMENT)
+     */
+    function initializeNeurityAnimations() {
+        // Animation de chargement des éléments de la navbar
+        const navElements = document.querySelectorAll('.neurosity-nav-controls > *');
+        navElements.forEach((element, index) => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(-10px)';
+
+            setTimeout(() => {
+                element.style.transition = 'all 0.3s ease';
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            }, 100 * (index + 1));
+        });
+
+        // Animation d'entrée pour les cartes
+        const cards = document.querySelectorAll('#neurityModuleContainer .card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+
+            setTimeout(() => {
+                card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 200 * (index + 1));
+        });
+    }
+
+    // ✅ Fonction d'actualisation spécifique au module
+    function refreshNeuritySessions() {
+        const refreshBtn = document.querySelector('#neurityModuleContainer .sessions-refresh-btn');
+        if (!refreshBtn) return;
+
+        const originalText = refreshBtn.innerHTML;
+        const iconSpan = refreshBtn.querySelector('span:first-child');
+
+        // Animation du bouton
+        if (iconSpan) {
+            iconSpan.style.animation = 'neuritySpin 1s linear infinite';
+        }
+        refreshBtn.innerHTML = '<span style="animation: neuritySpin 1s linear infinite;">🔄</span> <span class="btn-text">Actualisation...</span>';
+        refreshBtn.disabled = true;
+
+        if (window.NeurityModule && window.NeurityModule.showNeurityToast) {
+            window.NeurityModule.showNeurityToast('🔄 Actualisation des sessions Neurosity...', 'info', 2000);
+        }
+
+        // Appeler la fonction du module Neurosity
+        if (window.NeurityModule && window.NeurityModule.loadSessions) {
+            window.NeurityModule.loadSessions().finally(() => {
+                setTimeout(() => {
+                    refreshBtn.innerHTML = originalText;
+                    refreshBtn.disabled = false;
+                    if (iconSpan) {
+                        iconSpan.style.animation = '';
+                    }
+                }, 1000);
+            });
+        } else {
+            // Fallback si loadSessions n'est pas disponible
+            setTimeout(() => {
+                refreshBtn.innerHTML = originalText;
+                refreshBtn.disabled = false;
+            }, 1000);
+        }
+    }
+
+    // ✅ Message de confirmation du module
+    setTimeout(() => {
+        if (window.NeurityModule && window.NeurityModule.showNeurityToast) {
+            window.NeurityModule.showNeurityToast('🧠 Module Neurosity intégré au dashboard avec sidebar', 'success', 3000);
+        }
+        console.log('✅ Template Neurosity modulaire initialisé dans le dashboard');
+    }, 2000);
+</script>
+
+<!-- ✅ Application JavaScript modulaire -->
+<script src="{{ url_for('static', filename='js/modules/neurosity.js') }}"></script>

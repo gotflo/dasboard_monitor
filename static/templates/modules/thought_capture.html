@@ -1,0 +1,118 @@
+<!-- Module Capture de Pensée - Interface d'enregistrement audio -->
+<div class="thought-capture-container">
+    <div class="thought-header">
+        <h1 class="thought-title">
+            Capture de Pensée
+        </h1>
+    </div>
+
+    <div class="thought-content">
+        <!-- Card d'enregistrement -->
+        <div class="recording-section">
+            <div class="card recording-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-microphone"></i> Enregistrement Audio</h3>
+                    <span class="recording-status" id="recordingStatus">Prêt</span>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Visualiseur audio -->
+                    <div class="audio-visualizer">
+                        <canvas id="audioCanvas" width="300" height="100"></canvas>
+                        <div class="visualizer-overlay">
+                            <div class="pulse-ring"></div>
+                            <div class="pulse-ring"></div>
+                            <div class="pulse-ring"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Timer -->
+                    <div class="recording-timer" id="recordingTimer">00:00</div>
+                    
+                    <!-- Contrôles d'enregistrement -->
+                    <div class="recording-controls">
+                        <button class="btn-record" id="btnRecord" title="Démarrer l'enregistrement">
+                            <i class="fas fa-microphone"></i>
+                            <span>Enregistrer</span>
+                        </button>
+                        
+                        <button class="btn-stop" id="btnStop" disabled title="Arrêter l'enregistrement">
+                            <i class="fas fa-stop"></i>
+                            <span>Arrêter</span>
+                        </button>
+                        
+                        <button class="btn-pause" id="btnPause" disabled title="Pause">
+                            <i class="fas fa-pause"></i>
+                            <span>Pause</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Niveau audio -->
+                    <div class="audio-level">
+                        <label>Niveau audio</label>
+                        <div class="level-bar">
+                            <div class="level-fill" id="audioLevel"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card liste des enregistrements -->
+        <div class="recordings-section">
+            <div class="card recordings-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-list"></i> Enregistrements</h3>
+                    <span class="recordings-count">0 fichiers</span>
+                </div>
+                
+                <div class="card-body">
+                    <div class="recordings-list" id="recordingsList">
+                        <!-- Message par défaut -->
+                        <div class="empty-state">
+                            <i class="fas fa-microphone-slash"></i>
+                            <p>Aucun enregistrement</p>
+                            <span>Commencez par enregistrer votre première pensée</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template pour un enregistrement -->
+<template id="recordingItemTemplate">
+    <div class="recording-item" data-id="">
+        <div class="recording-info">
+            <div class="recording-icon">
+                <i class="fas fa-file-audio"></i>
+            </div>
+            <div class="recording-details">
+                <h4 class="recording-name"></h4>
+                <div class="recording-meta">
+                    <span class="recording-date"></span>
+                    <span class="recording-duration"></span>
+                    <span class="recording-size"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recording-actions">
+            <button class="btn-action btn-play" title="Écouter">
+                <i class="fas fa-play"></i>
+            </button>
+            <button class="btn-action btn-download" title="Télécharger">
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="btn-action btn-delete" title="Supprimer">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        
+        <!-- Player audio caché -->
+        <div class="audio-player-container" style="display: none;">
+            <audio class="audio-player" controls></audio>
+        </div>
+    </div>
+</template>

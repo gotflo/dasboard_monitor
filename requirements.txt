@@ -1,0 +1,6 @@
+flask
+flask-socketio
+neurosity
+python-dotenv
+pandas
+numpy
