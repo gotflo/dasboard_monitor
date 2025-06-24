@@ -1,57 +1,57 @@
 <!-- Module Capture de Pensée - Interface d'enregistrement audio -->
-<div class="thought-capture-container">
-    <div class="thought-header">
-        <h1 class="thought-title">
+<div class="thought_capture-container">
+    <div class="thought_header">
+        <h1 class="thought_title">
             Capture de Pensée
         </h1>
     </div>
 
-    <div class="thought-content">
+    <div class="thought_content">
         <!-- Card d'enregistrement -->
-        <div class="recording-section">
-            <div class="card recording-card">
-                <div class="card-header">
+        <div class="thought_recording-section">
+            <div class="thought_card thought_recording-card">
+                <div class="thought_card-header">
                     <h3><i class="fas fa-microphone"></i> Enregistrement Audio</h3>
-                    <span class="recording-status" id="recordingStatus">Prêt</span>
+                    <span class="thought_recording-status" id="thought_recordingStatus">Prêt</span>
                 </div>
                 
-                <div class="card-body">
+                <div class="thought_card-body">
                     <!-- Visualiseur audio -->
-                    <div class="audio-visualizer">
-                        <canvas id="audioCanvas" width="300" height="100"></canvas>
-                        <div class="visualizer-overlay">
-                            <div class="pulse-ring"></div>
-                            <div class="pulse-ring"></div>
-                            <div class="pulse-ring"></div>
+                    <div class="thought_audio-visualizer">
+                        <canvas id="thought_audioCanvas" width="300" height="100"></canvas>
+                        <div class="thought_visualizer-overlay">
+                            <div class="thought_pulse-ring"></div>
+                            <div class="thought_pulse-ring"></div>
+                            <div class="thought_pulse-ring"></div>
                         </div>
                     </div>
                     
                     <!-- Timer -->
-                    <div class="recording-timer" id="recordingTimer">00:00</div>
+                    <div class="thought_recording-timer" id="thought_recordingTimer">00:00</div>
                     
                     <!-- Contrôles d'enregistrement -->
-                    <div class="recording-controls">
-                        <button class="btn-record" id="btnRecord" title="Démarrer l'enregistrement">
+                    <div class="thought_recording-controls">
+                        <button class="thought_btn-record" id="thought_btnRecord" title="Démarrer l'enregistrement">
                             <i class="fas fa-microphone"></i>
                             <span>Enregistrer</span>
                         </button>
                         
-                        <button class="btn-stop" id="btnStop" disabled title="Arrêter l'enregistrement">
+                        <button class="thought_btn-stop" id="thought_btnStop" disabled title="Arrêter l'enregistrement">
                             <i class="fas fa-stop"></i>
                             <span>Arrêter</span>
                         </button>
                         
-                        <button class="btn-pause" id="btnPause" disabled title="Pause">
+                        <button class="thought_btn-pause" id="thought_btnPause" disabled title="Pause">
                             <i class="fas fa-pause"></i>
                             <span>Pause</span>
                         </button>
                     </div>
                     
                     <!-- Niveau audio -->
-                    <div class="audio-level">
+                    <div class="thought_audio-level">
                         <label>Niveau audio</label>
-                        <div class="level-bar">
-                            <div class="level-fill" id="audioLevel"></div>
+                        <div class="thought_level-bar">
+                            <div class="thought_level-fill" id="thought_audioLevel"></div>
                         </div>
                     </div>
                 </div>
@@ -59,17 +59,17 @@
         </div>
 
         <!-- Card liste des enregistrements -->
-        <div class="recordings-section">
-            <div class="card recordings-card">
-                <div class="card-header">
+        <div class="thought_recordings-section">
+            <div class="thought_card thought_recordings-card">
+                <div class="thought_card-header">
                     <h3><i class="fas fa-list"></i> Enregistrements</h3>
-                    <span class="recordings-count">0 fichiers</span>
+                    <span class="thought_recordings-count">0 fichiers</span>
                 </div>
                 
-                <div class="card-body">
-                    <div class="recordings-list" id="recordingsList">
+                <div class="thought_card-body">
+                    <div class="thought_recordings-list" id="thought_recordingsList">
                         <!-- Message par défaut -->
-                        <div class="empty-state">
+                        <div class="thought_empty-state">
                             <i class="fas fa-microphone-slash"></i>
                             <p>Aucun enregistrement</p>
                             <span>Commencez par enregistrer votre première pensée</span>
@@ -82,37 +82,37 @@
 </div>
 
 <!-- Template pour un enregistrement -->
-<template id="recordingItemTemplate">
-    <div class="recording-item" data-id="">
-        <div class="recording-info">
-            <div class="recording-icon">
+<template id="thought_recordingItemTemplate">
+    <div class="thought_recording-item" data-id="">
+        <div class="thought_recording-info">
+            <div class="thought_recording-icon">
                 <i class="fas fa-file-audio"></i>
             </div>
-            <div class="recording-details">
-                <h4 class="recording-name"></h4>
-                <div class="recording-meta">
-                    <span class="recording-date"></span>
-                    <span class="recording-duration"></span>
-                    <span class="recording-size"></span>
+            <div class="thought_recording-details">
+                <h4 class="thought_recording-name"></h4>
+                <div class="thought_recording-meta">
+                    <span class="thought_recording-date"></span>
+                    <span class="thought_recording-duration"></span>
+                    <span class="thought_recording-size"></span>
                 </div>
             </div>
         </div>
         
-        <div class="recording-actions">
-            <button class="btn-action btn-play" title="Écouter">
+        <div class="thought_recording-actions">
+            <button class="thought_btn-action thought_btn-play" title="Écouter">
                 <i class="fas fa-play"></i>
             </button>
-            <button class="btn-action btn-download" title="Télécharger">
+            <button class="thought_btn-action thought_btn-download" title="Télécharger">
                 <i class="fas fa-download"></i>
             </button>
-            <button class="btn-action btn-delete" title="Supprimer">
+            <button class="thought_btn-action thought_btn-delete" title="Supprimer">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
         
         <!-- Player audio caché -->
-        <div class="audio-player-container" style="display: none;">
-            <audio class="audio-player" controls></audio>
+        <div class="thought_audio-player-container" style="display: none;">
+            <audio class="thought_audio-player" controls></audio>
         </div>
     </div>
 </template>

@@ -307,9 +307,9 @@ def get_module_info():
         'description': 'Module d\'enregistrement audio pour capture de pensées',
         'author': 'BioMedical Hub',
         'routes': [
-            {'path': '/api/thought-capture/save-audio', 'method': 'POST'},
-            {'path': '/api/thought-capture/list-audios', 'method': 'GET'},
-            {'path': '/api/thought-capture/delete-audio/<filename>', 'method': 'DELETE'},
-            {'path': '/api/thought-capture/stats', 'method': 'GET'}
+            {'path': '/api/thought_capture-capture/save-audio', 'method': 'POST'},
+            {'path': '/api/thought_capture-capture/list-audios', 'method': 'GET'},
+            {'path': '/api/thought_capture-capture/delete-audio/<filename>', 'method': 'DELETE'},
+            {'path': '/api/thought_capture-capture/stats', 'method': 'GET'}
         ]
     }

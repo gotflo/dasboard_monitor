@@ -11,12 +11,19 @@ import os
 import webbrowser
 import threading
 import time
+import platform
+import subprocess
+import signal
 
 # Import du gestionnaire WebSocket
 from websocket_manager import websocket_manager
 from module_registry import ModuleRegistry
-from modules.thought.thought_capture import init_module as init_thought_capture
-from modules.thought.thought_capture import register_websocket_events as register_thought_capture_events
+from modules.thought_capture.thought_capture import init_module as init_thought_capture
+from modules.thought_capture.thought_capture import register_websocket_events as register_thought_capture_events
+from modules.thermal_camera.thermal_camera import (
+    init_thermal_module,
+    register_thermal_websocket_events
+)
 
 # Configuration du logging
 logging.basicConfig(
@@ -31,12 +38,113 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'biomedical-hub-secret-k
 app.config['DEBUG'] = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
 init_thought_capture(app)
 logger.info("Module Thought Capture initialisé")
+# Initialisation du module thermique
+thermal_module = init_thermal_module(app, websocket_manager)
+logger.info("Module Caméra Thermique initialisé")
 
 # Initialisation du gestionnaire WebSocket
 websocket_manager.init_app(app)
 
 # Initialisation du registre des modules
 module_registry = ModuleRegistry()
+
+
+# ========================
+# FONCTION POUR TUER LE PORT
+# ========================
+
+def kill_port(port):
+    """Tuer le processus qui utilise le port spécifié"""
+    system = platform.system()
+    logger.info(f"Tentative de libération du port {port} sur {system}...")
+    
+    try:
+        if system == "Windows":
+            # Pour Windows
+            # Trouver le PID du processus qui utilise le port
+            cmd = f"netstat -ano | findstr :{port}"
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            
+            if result.stdout:
+                lines = result.stdout.strip().split('\n')
+                pids = set()
+                
+                for line in lines:
+                    parts = line.split()
+                    if len(parts) > 4:
+                        # Le PID est généralement le dernier élément
+                        pid = parts[-1]
+                        if pid.isdigit():
+                            pids.add(pid)
+                
+                # Tuer chaque processus trouvé
+                for pid in pids:
+                    try:
+                        kill_cmd = f"taskkill /F /PID {pid}"
+                        subprocess.run(kill_cmd, shell=True, capture_output=True)
+                        logger.info(f"Processus PID {pid} tué sur le port {port}")
+                    except Exception as e:
+                        logger.warning(f"Impossible de tuer le processus PID {pid}: {e}")
+                
+                if pids:
+                    # Attendre un peu pour que le port soit libéré
+                    time.sleep(1)
+                    logger.info(f"Port {port} libéré avec succès")
+                else:
+                    logger.info(f"Aucun processus trouvé sur le port {port}")
+            else:
+                logger.info(f"Le port {port} est déjà libre")
+        
+        else:  # Linux ou macOS
+            # Pour Linux/macOS
+            try:
+                # Utiliser lsof pour trouver le processus
+                cmd = f"lsof -ti:{port}"
+                result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                
+                if result.stdout:
+                    pids = result.stdout.strip().split('\n')
+                    
+                    for pid in pids:
+                        if pid and pid.isdigit():
+                            try:
+                                # Tuer le processus
+                                os.kill(int(pid), signal.SIGKILL)
+                                logger.info(f"Processus PID {pid} tué sur le port {port}")
+                            except ProcessLookupError:
+                                logger.warning(f"Le processus PID {pid} n'existe plus")
+                            except PermissionError:
+                                logger.warning(f"Permission refusée pour tuer le processus PID {pid}")
+                                # Essayer avec sudo si nécessaire
+                                try:
+                                    subprocess.run(f"sudo kill -9 {pid}", shell=True)
+                                    logger.info(f"Processus PID {pid} tué avec sudo")
+                                except:
+                                    pass
+                    
+                    # Attendre un peu pour que le port soit libéré
+                    time.sleep(1)
+                    logger.info(f"Port {port} libéré avec succès")
+                else:
+                    logger.info(f"Le port {port} est déjà libre")
+            
+            except FileNotFoundError:
+                logger.warning("lsof non trouvé. Essai avec netstat...")
+                # Alternative avec netstat pour certains systèmes Linux
+                try:
+                    cmd = f"netstat -tlnp 2>/dev/null | grep :{port}"
+                    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                    
+                    if result.stdout:
+                        logger.warning(
+                            f"Un processus utilise le port {port} mais impossible de le tuer automatiquement")
+                        logger.warning("Essayez de tuer le processus manuellement ou utilisez sudo")
+                except:
+                    pass
+    
+    except Exception as e:
+        logger.error(f"Erreur lors de la tentative de libération du port {port}: {e}")
+        logger.info("Tentative de démarrage du serveur malgré l'erreur...")
 
 
 # ========================
@@ -260,13 +368,8 @@ def register_module_websocket_events():
     }
     websocket_manager.register_module_events('eeg_crown', eeg_events)
     
-    # Événements pour le module Caméra Thermique
-    thermal_events = {
-        'start_capture': handle_thermal_start_capture,
-        'stop_capture': handle_thermal_stop_capture,
-        'get_temperature_map': handle_thermal_temperature_request
-    }
-    websocket_manager.register_module_events('thermal_camera', thermal_events)
+    # Enregistrer les événements du module thermique
+    register_thermal_websocket_events(websocket_manager, thermal_module)
     
     # Événements pour le module Gazepoint
     gazepoint_events = {
@@ -370,7 +473,7 @@ def handle_eeg_brain_waves_request(data):
         'beta': 8.3,
         'theta': 6.1,
         'delta': 2.8,
-        'focus_level': 0.75,
+        'focus_level': 0.76,
         'timestamp': datetime.now().isoformat()
     }
     websocket_manager.emit_to_current_client('eeg_brain_waves', fake_brain_waves)
@@ -497,8 +600,11 @@ register_module_websocket_events()
 if __name__ == '__main__':
     # Configuration du serveur - FORCER LOCALHOST
     host = 'localhost'  # Forcé à localhost au lieu de 0.0.0.0
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 3333))
     debug = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
+    
+    # LIBÉRER LE PORT AVANT DE DÉMARRER
+    kill_port(port)
     
     # Désactiver les logs Werkzeug en production
     if not debug:
@@ -506,12 +612,12 @@ if __name__ == '__main__':
         log.setLevel(logging.ERROR)
     
     logger.info("=" * 60)
-    logger.info("DÉMARRAGE DU BIOMEDICAL HUB DASHBOARD")
+    logger.info("DÉMARRAGE DU DASHBOARD")
     logger.info("=" * 60)
     logger.info(f"Serveur: http://localhost:{port}")
     logger.info(f"Mode debug: {debug}")
     logger.info(f"Modules disponibles: {module_registry.get_modules_count()}")
-    logger.info(f"🔌 WebSocket: Activé")
+    logger.info(f"WebSocket: Activé")
     logger.info("=" * 60)
     
     # Ouvrir automatiquement le navigateur

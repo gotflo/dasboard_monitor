@@ -1,5 +1,5 @@
 /**
- * Dashboard Manager - BioMedical Hub
+ * Dashboard Manager - BioMedical Hub (Version corrigée)
  */
 
 class Dashboard {
@@ -12,6 +12,9 @@ class Dashboard {
         this.loadedScripts = new Set();
         this.moduleInstances = new Map();
         this.devMode = this.isDevMode();
+        this.persistentModules = new Set(['thermal_camera', 'thought_capture']);
+        this.hiddenContainer = null;
+        this.persistentScriptsLoaded = new Set();
 
         this.init();
     }
@@ -28,7 +31,7 @@ class Dashboard {
             console.log('Initialisation Dashboard BioMedical Hub...');
 
             if (this.devMode) {
-                console.log('🔧 MODE DÉVELOPPEMENT: Cache désactivé');
+                console.log('MODE DÉVELOPPEMENT: Cache désactivé');
             }
 
             this.setupNavigation();
@@ -36,6 +39,12 @@ class Dashboard {
             this.setupMobileMenu();
             this.loadInitialModule();
             this.initWebSocketClient();
+
+            // Container pour modules persistants
+            this.hiddenContainer = document.createElement('div');
+            this.hiddenContainer.id = 'hidden-modules';
+            this.hiddenContainer.style.display = 'none';
+            document.body.appendChild(this.hiddenContainer);
 
             console.log('Dashboard initialisé');
         } catch (error) {
@@ -189,6 +198,37 @@ class Dashboard {
         }
 
         try {
+            // Vérifier le cache pour les modules persistants
+            if (this.persistentModules.has(moduleName)) {
+                const cachedModule = this.hiddenContainer.querySelector(`[data-module="${moduleName}"]`);
+                if (cachedModule) {
+                    content.innerHTML = '';
+                    content.appendChild(cachedModule);
+                    content.style.opacity = '1';
+                    content.style.transform = 'translateY(0)';
+
+                    this.currentModule = moduleName;
+                    this.updateActiveNavigation(moduleName);
+                    this.isLoading = false;
+
+                    console.log(`Module "${moduleName}" restauré`);
+
+                    // Réinitialiser l'instance si nécessaire
+                    const instance = this.moduleInstances.get(moduleName);
+                    if (instance) {
+                        // Réinitialiser l'affichage du timer pour thought_capture
+                        if (moduleName === 'thought_capture' && typeof instance.stopTimer === 'function') {
+                            instance.stopTimer();
+                        }
+                        if (typeof instance.init === 'function') {
+                            instance.init();
+                        }
+                    }
+
+                    return;
+                }
+            }
+
             content.style.opacity = '0';
             content.style.transform = 'translateY(20px)';
             content.classList.add('loading');
@@ -197,6 +237,15 @@ class Dashboard {
 
             setTimeout(() => {
                 content.innerHTML = templateHTML;
+
+                // Marquer le contenu avec le nom du module si c'est persistant
+                if (this.persistentModules.has(moduleName)) {
+                    const moduleContainer = content.firstElementChild;
+                    if (moduleContainer) {
+                        moduleContainer.setAttribute('data-module', moduleName);
+                    }
+                }
+
                 this.updateActiveNavigation(moduleName);
                 this.loadModuleResources(moduleName, content);
 
@@ -230,7 +279,16 @@ class Dashboard {
         }
 
         if (module.script) {
-            await this.loadModuleScript(module.script, moduleName);
+            // Pour les modules persistants, ne charger qu'une seule fois
+            if (this.persistentModules.has(moduleName) && this.persistentScriptsLoaded.has(moduleName)) {
+                console.log(`Script déjà chargé pour le module persistant: ${moduleName}`);
+                this.initializeModule(moduleName);
+            } else {
+                await this.loadModuleScript(module.script, moduleName);
+                if (this.persistentModules.has(moduleName)) {
+                    this.persistentScriptsLoaded.add(moduleName);
+                }
+            }
         }
 
         this.loadInlineScripts(container);
@@ -260,7 +318,9 @@ class Dashboard {
     }
 
     async loadModuleScript(scriptUrl, moduleName) {
+        // Éviter de recharger les scripts des modules persistants
         if (this.loadedScripts.has(scriptUrl)) {
+            console.log(`Script déjà chargé: ${scriptUrl}`);
             this.initializeModule(moduleName);
             return;
         }
@@ -306,21 +366,44 @@ class Dashboard {
 
         const initFn = initFunctions[moduleName];
         if (initFn && window[initFn]) {
-            const instance = window[initFn]();
-            if (instance) {
-                this.moduleInstances.set(moduleName, instance);
+            try {
+                const instance = window[initFn]();
+                if (instance) {
+                    this.moduleInstances.set(moduleName, instance);
+                }
+            } catch (error) {
+                console.error(`Erreur initialisation module ${moduleName}:`, error);
             }
         }
     }
 
     cleanupCurrentModule() {
-        const instance = this.moduleInstances.get(this.currentModule);
+        if (this.persistentModules.has(this.currentModule)) {
+            const content = document.getElementById('main-content');
+            const moduleContent = content.firstElementChild;
 
+            if (moduleContent && this.hiddenContainer) {
+                // Pour thought_capture, s'assurer que le timer est arrêté si pas d'enregistrement en cours
+                if (this.currentModule === 'thought_capture') {
+                    const instance = this.moduleInstances.get('thought_capture');
+                    if (instance && !instance.thought_isRecording && instance.thought_timerInterval) {
+                        console.log('Arrêt du timer du module thought_capture avant de le cacher');
+                        instance.stopTimer();
+                    }
+                }
+
+                moduleContent.setAttribute('data-module', this.currentModule);
+                this.hiddenContainer.appendChild(moduleContent);
+                console.log(`Module ${this.currentModule} caché (reste actif)`);
+            }
+            return;
+        }
+
+        const instance = this.moduleInstances.get(this.currentModule);
         if (instance && typeof instance.cleanup === 'function') {
             instance.cleanup();
             console.log(`Module ${this.currentModule} nettoyé`);
         }
-
         this.moduleInstances.delete(this.currentModule);
     }
 
@@ -498,11 +581,11 @@ class Dashboard {
         const devModeText = this.devMode ? ' (Dev)' : '';
 
         if (connected) {
-            statusIndicator.innerHTML = `<i class="fas fa-circle" style="color: #10b981;"></i> WebSocket Connecté`;
+            statusIndicator.innerHTML = `<i class="fas fa-circle" style="color: #10b981;"></i> WebSocket Connecté${devModeText}`;
             statusIndicator.style.background = '#dcfce7';
             statusIndicator.style.color = '#166534';
         } else {
-            statusIndicator.innerHTML = `<i class="fas fa-circle" style="color: #ef4444;"></i> WebSocket Déconnecté`;
+            statusIndicator.innerHTML = `<i class="fas fa-circle" style="color: #ef4444;"></i> WebSocket Déconnecté${devModeText}`;
             statusIndicator.style.background = '#fef2f2';
             statusIndicator.style.color = '#991b1b';
         }
@@ -536,6 +619,7 @@ class Dashboard {
 
         this.templateCache.clear();
         this.loadedScripts.clear();
+        this.persistentScriptsLoaded.clear();
     }
 }
 

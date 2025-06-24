@@ -1,18 +1,57 @@
 /**
- * Module Capture de Pensée - Version simple avec stockage fichiers
+ * Module Capture de Pensée - Version corrigée avec gestion robuste du template
+ * Tous les éléments DOM utilisent le préfixe thought_ pour éviter les conflits
  */
 
 class ThoughtCaptureModule {
     constructor() {
-        this.mediaRecorder = null;
-        this.audioChunks = [];
-        this.isRecording = false;
-        this.isPaused = false;
-        this.recordingStartTime = null;
-        this.timerInterval = null;
-        this.audioContext = null;
-        this.analyser = null;
-        this.recordings = [];
+        this.thought_mediaRecorder = null;
+        this.thought_audioChunks = [];
+        this.thought_isRecording = false;
+        this.thought_isPaused = false;
+        this.thought_recordingStartTime = null;
+        this.thought_timerInterval = null;
+        this.thought_audioContext = null;
+        this.thought_analyser = null;
+        this.thought_recordings = [];
+        this.audioPermissionsChecked = false;
+        this.isInitialized = false;
+
+        // Stocker le template HTML comme string pour éviter les problèmes de DOM
+        this.recordingItemTemplateHTML = `
+            <div class="thought_recording-item" data-id="">
+                <div class="thought_recording-info">
+                    <div class="thought_recording-icon">
+                        <i class="fas fa-file-audio"></i>
+                    </div>
+                    <div class="thought_recording-details">
+                        <h4 class="thought_recording-name"></h4>
+                        <div class="thought_recording-meta">
+                            <span class="thought_recording-date"></span>
+                            <span class="thought_recording-duration"></span>
+                            <span class="thought_recording-size"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="thought_recording-actions">
+                    <button class="thought_btn-action thought_btn-play" title="Écouter">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="thought_btn-action thought_btn-download" title="Télécharger">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="thought_btn-action thought_btn-delete" title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                
+                <!-- Player audio caché -->
+                <div class="thought_audio-player-container" style="display: none;">
+                    <audio class="thought_audio-player" controls></audio>
+                </div>
+            </div>
+        `;
 
         this.init();
     }
@@ -21,17 +60,49 @@ class ThoughtCaptureModule {
         console.log('Initialisation du module Capture de Pensée (Simple)');
 
         try {
+            // Ne pas réinitialiser le timer si un enregistrement est en cours
+            if (!this.thought_isRecording) {
+                // Nettoyer tout timer existant
+                if (this.thought_timerInterval) {
+                    clearInterval(this.thought_timerInterval);
+                    this.thought_timerInterval = null;
+                }
+
+                // Réinitialiser l'affichage du timer seulement si pas d'enregistrement
+                const timerElement = document.getElementById('thought_recordingTimer');
+                if (timerElement) {
+                    timerElement.textContent = '00:00';
+                }
+            } else {
+                console.log('Enregistrement en cours, conservation du timer');
+                // Redémarrer le timer avec le temps sauvegardé
+                this.startTimer();
+
+                // Restaurer la visualisation si nécessaire
+                if (this.thought_mediaRecorder && this.thought_mediaRecorder.stream) {
+                    this.startAudioVisualization(this.thought_mediaRecorder.stream);
+                }
+            }
+
             // Charger la liste des enregistrements
             await this.loadRecordings();
 
             // Configuration des boutons
             this.setupEventListeners();
 
-            // Vérifier les permissions audio
-            await this.checkAudioPermissions();
+            // Vérifier les permissions audio seulement si pas déjà fait
+            if (!this.audioPermissionsChecked) {
+                await this.checkAudioPermissions();
+                this.audioPermissionsChecked = true;
+            }
 
             // Initialiser le visualiseur
             this.initAudioVisualizer();
+
+            // Restaurer l'état de l'UI si enregistrement en cours
+            if (this.thought_isRecording) {
+                this.updateRecordingUI(true);
+            }
 
             console.log('Module initialisé');
         } catch (error) {
@@ -44,21 +115,47 @@ class ThoughtCaptureModule {
             const response = await fetch('/api/thought-capture/list-audios');
             const data = await response.json();
 
-            this.recordings = data.files || [];
-            console.log(`${this.recordings.length} fichiers trouvés`);
+            this.thought_recordings = data.files || [];
+            console.log(`${this.thought_recordings.length} fichiers trouvés`);
 
             this.renderRecordings();
         } catch (error) {
             console.error('Erreur chargement:', error);
-            this.recordings = [];
+            this.thought_recordings = [];
             this.renderRecordings();
         }
     }
 
     setupEventListeners() {
-        document.getElementById('btnRecord')?.addEventListener('click', () => this.toggleRecording());
-        document.getElementById('btnStop')?.addEventListener('click', () => this.stopRecording());
-        document.getElementById('btnPause')?.addEventListener('click', () => this.togglePause());
+        // Éviter de dupliquer les event listeners
+        if (this.isInitialized) {
+            console.log('Event listeners déjà configurés');
+            return;
+        }
+
+        const btnRecord = document.getElementById('thought_btnRecord');
+        const btnStop = document.getElementById('thought_btnStop');
+        const btnPause = document.getElementById('thought_btnPause');
+
+        if (btnRecord) {
+            btnRecord.removeEventListener('click', this.toggleRecordingHandler);
+            this.toggleRecordingHandler = () => this.toggleRecording();
+            btnRecord.addEventListener('click', this.toggleRecordingHandler);
+        }
+
+        if (btnStop) {
+            btnStop.removeEventListener('click', this.stopRecordingHandler);
+            this.stopRecordingHandler = () => this.stopRecording();
+            btnStop.addEventListener('click', this.stopRecordingHandler);
+        }
+
+        if (btnPause) {
+            btnPause.removeEventListener('click', this.togglePauseHandler);
+            this.togglePauseHandler = () => this.togglePause();
+            btnPause.addEventListener('click', this.togglePauseHandler);
+        }
+
+        this.isInitialized = true;
     }
 
     async checkAudioPermissions() {
@@ -74,7 +171,7 @@ class ThoughtCaptureModule {
     }
 
     initAudioVisualizer() {
-        const canvas = document.getElementById('audioCanvas');
+        const canvas = document.getElementById('thought_audioCanvas');
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
@@ -83,7 +180,7 @@ class ThoughtCaptureModule {
     }
 
     async toggleRecording() {
-        if (!this.isRecording) {
+        if (!this.thought_isRecording) {
             await this.startRecording();
         } else {
             this.stopRecording();
@@ -97,22 +194,24 @@ class ThoughtCaptureModule {
 
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-            this.mediaRecorder = new MediaRecorder(stream);
-            this.audioChunks = [];
+            this.thought_mediaRecorder = new MediaRecorder(stream);
+            this.thought_audioChunks = [];
 
-            this.mediaRecorder.ondataavailable = (event) => {
+            this.thought_mediaRecorder.ondataavailable = (event) => {
                 if (event.data.size > 0) {
-                    this.audioChunks.push(event.data);
+                    this.thought_audioChunks.push(event.data);
                 }
             };
 
-            this.mediaRecorder.onstop = () => {
-                this.saveRecording();
+            this.thought_mediaRecorder.onstop = async () => {
+                // S'assurer que le timer est arrêté avant la sauvegarde
+                this.stopTimer();
+                await this.saveRecording();
             };
 
-            this.mediaRecorder.start();
-            this.isRecording = true;
-            this.recordingStartTime = Date.now();
+            this.thought_mediaRecorder.start();
+            this.thought_isRecording = true;
+            this.thought_recordingStartTime = Date.now();
 
             this.updateRecordingUI(true);
             this.startTimer();
@@ -126,17 +225,23 @@ class ThoughtCaptureModule {
     }
 
     stopRecording() {
-        if (this.mediaRecorder && this.isRecording) {
-            this.mediaRecorder.stop();
-            this.isRecording = false;
-            this.isPaused = false;
+        if (this.thought_mediaRecorder && this.thought_isRecording) {
+            this.thought_mediaRecorder.stop();
+            this.thought_isRecording = false;
+            this.thought_isPaused = false;
+            this.thought_recordingStartTime = null; // Réinitialiser le temps de départ
 
-            if (this.mediaRecorder.stream) {
-                this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            if (this.thought_mediaRecorder.stream) {
+                this.thought_mediaRecorder.stream.getTracks().forEach(track => track.stop());
             }
 
-            this.updateRecordingUI(false);
+            // Arrêter le timer immédiatement
             this.stopTimer();
+
+            // Mettre à jour l'UI
+            this.updateRecordingUI(false);
+
+            // Arrêter la visualisation
             this.stopAudioVisualization();
 
             console.log('Enregistrement arrêté');
@@ -144,96 +249,138 @@ class ThoughtCaptureModule {
     }
 
     togglePause() {
-        if (!this.isRecording) return;
+        if (!this.thought_isRecording) return;
 
-        const btnPause = document.getElementById('btnPause');
-        const status = document.getElementById('recordingStatus');
+        const btnPause = document.getElementById('thought_btnPause');
+        const status = document.getElementById('thought_recordingStatus');
 
-        if (!this.isPaused) {
-            this.mediaRecorder.pause();
-            this.isPaused = true;
-            btnPause.classList.add('paused');
+        if (!this.thought_isPaused) {
+            this.thought_mediaRecorder.pause();
+            this.thought_isPaused = true;
+            btnPause.classList.add('thought_paused');
             status.textContent = 'En pause';
-            status.classList.add('paused');
+            status.classList.add('thought_paused');
         } else {
-            this.mediaRecorder.resume();
-            this.isPaused = false;
-            btnPause.classList.remove('paused');
+            this.thought_mediaRecorder.resume();
+            this.thought_isPaused = false;
+            btnPause.classList.remove('thought_paused');
             status.textContent = 'Enregistrement...';
-            status.classList.remove('paused');
+            status.classList.remove('thought_paused');
         }
     }
 
     updateRecordingUI(isRecording) {
-        const btnRecord = document.getElementById('btnRecord');
-        const btnStop = document.getElementById('btnStop');
-        const btnPause = document.getElementById('btnPause');
-        const status = document.getElementById('recordingStatus');
-        const visualizerOverlay = document.querySelector('.visualizer-overlay');
+        const btnRecord = document.getElementById('thought_btnRecord');
+        const btnStop = document.getElementById('thought_btnStop');
+        const btnPause = document.getElementById('thought_btnPause');
+        const status = document.getElementById('thought_recordingStatus');
+        const visualizerOverlay = document.querySelector('.thought_visualizer-overlay');
+        const timerElement = document.getElementById('thought_recordingTimer');
 
         if (isRecording) {
-            btnRecord.classList.add('recording');
-            btnRecord.querySelector('span').textContent = 'Enregistrement...';
-            btnStop.disabled = false;
-            btnPause.disabled = false;
-            status.textContent = 'Enregistrement...';
-            status.classList.add('recording');
-            visualizerOverlay?.classList.add('recording');
+            btnRecord?.classList.add('thought_recording');
+            if (btnRecord?.querySelector('span')) {
+                btnRecord.querySelector('span').textContent = 'Enregistrement...';
+            }
+            if (btnStop) btnStop.disabled = false;
+            if (btnPause) btnPause.disabled = false;
+            if (status) {
+                status.textContent = 'Enregistrement...';
+                status.classList.add('thought_recording');
+            }
+            visualizerOverlay?.classList.add('thought_recording');
         } else {
-            btnRecord.classList.remove('recording');
-            btnRecord.querySelector('span').textContent = 'Enregistrer';
-            btnStop.disabled = true;
-            btnPause.disabled = true;
-            status.textContent = 'Prêt';
-            status.classList.remove('recording', 'paused');
-            visualizerOverlay?.classList.remove('recording');
+            btnRecord?.classList.remove('thought_recording');
+            if (btnRecord?.querySelector('span')) {
+                btnRecord.querySelector('span').textContent = 'Enregistrer';
+            }
+            if (btnStop) btnStop.disabled = true;
+            if (btnPause) btnPause.disabled = true;
+            if (status) {
+                status.textContent = 'Prêt';
+                status.classList.remove('thought_recording', 'thought_paused');
+            }
+            visualizerOverlay?.classList.remove('thought_recording');
+
+            // S'assurer que le timer est réinitialisé
+            if (timerElement) {
+                timerElement.textContent = '00:00';
+            }
         }
     }
 
     startTimer() {
-        const timerElement = document.getElementById('recordingTimer');
+        // S'assurer qu'aucun timer n'est déjà en cours
+        if (this.thought_timerInterval) {
+            clearInterval(this.thought_timerInterval);
+            this.thought_timerInterval = null;
+        }
+
+        const timerElement = document.getElementById('thought_recordingTimer');
         if (!timerElement) return;
 
-        let seconds = 0;
+        // Utiliser le temps de départ sauvegardé
+        const startTime = this.thought_recordingStartTime || Date.now();
 
-        this.timerInterval = setInterval(() => {
-            seconds++;
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            timerElement.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        this.thought_timerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+
+            const currentTimerElement = document.getElementById('thought_recordingTimer');
+            if (currentTimerElement) {
+                currentTimerElement.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            } else {
+                // Si l'élément n'existe plus, arrêter le timer
+                clearInterval(this.thought_timerInterval);
+                this.thought_timerInterval = null;
+            }
         }, 1000);
+
+        // Afficher immédiatement le temps écoulé si on restaure
+        if (this.thought_recordingStartTime) {
+            const elapsed = Math.floor((Date.now() - this.thought_recordingStartTime) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            timerElement.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
     }
 
     stopTimer() {
-        if (this.timerInterval) {
-            clearInterval(this.timerInterval);
-            this.timerInterval = null;
-            document.getElementById('recordingTimer').textContent = '00:00';
+        if (this.thought_timerInterval) {
+            clearInterval(this.thought_timerInterval);
+            this.thought_timerInterval = null;
+        }
+
+        // S'assurer que le timer est bien réinitialisé même si l'élément n'est pas trouvé immédiatement
+        const timerElement = document.getElementById('thought_recordingTimer');
+        if (timerElement) {
+            timerElement.textContent = '00:00';
         }
     }
 
     startAudioVisualization(stream) {
         try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const source = this.audioContext.createMediaStreamSource(stream);
-            this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = 256;
+            this.thought_audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const source = this.thought_audioContext.createMediaStreamSource(stream);
+            this.thought_analyser = this.thought_audioContext.createAnalyser();
+            this.thought_analyser.fftSize = 256;
 
-            source.connect(this.analyser);
+            source.connect(this.thought_analyser);
 
-            const canvas = document.getElementById('audioCanvas');
+            const canvas = document.getElementById('thought_audioCanvas');
             if (!canvas) return;
 
             const ctx = canvas.getContext('2d');
-            const bufferLength = this.analyser.frequencyBinCount;
+            const bufferLength = this.thought_analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
 
             const draw = () => {
-                if (!this.isRecording) return;
+                if (!this.thought_isRecording) return;
 
                 requestAnimationFrame(draw);
 
-                this.analyser.getByteFrequencyData(dataArray);
+                this.thought_analyser.getByteFrequencyData(dataArray);
 
                 ctx.fillStyle = '#f8fafc';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -258,7 +405,7 @@ class ThoughtCaptureModule {
                 // Mettre à jour le niveau audio
                 const average = dataArray.reduce((a, b) => a + b) / bufferLength;
                 const level = (average / 255) * 100;
-                const audioLevel = document.getElementById('audioLevel');
+                const audioLevel = document.getElementById('thought_audioLevel');
                 if (audioLevel) {
                     audioLevel.style.width = `${level}%`;
                 }
@@ -271,27 +418,27 @@ class ThoughtCaptureModule {
     }
 
     stopAudioVisualization() {
-        if (this.audioContext) {
-            this.audioContext.close();
-            this.audioContext = null;
+        if (this.thought_audioContext) {
+            this.thought_audioContext.close();
+            this.thought_audioContext = null;
         }
 
-        const canvas = document.getElementById('audioCanvas');
+        const canvas = document.getElementById('thought_audioCanvas');
         if (canvas) {
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = '#f8fafc';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        const audioLevel = document.getElementById('audioLevel');
+        const audioLevel = document.getElementById('thought_audioLevel');
         if (audioLevel) {
             audioLevel.style.width = '0%';
         }
     }
 
     async saveRecording() {
-        const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
-        const duration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+        const blob = new Blob(this.thought_audioChunks, { type: 'audio/webm' });
+        const duration = Math.floor((Date.now() - this.thought_recordingStartTime) / 1000);
 
         // Créer un FormData pour envoyer le fichier
         const formData = new FormData();
@@ -323,17 +470,83 @@ class ThoughtCaptureModule {
         }
     }
 
+    createRecordingElement(recording) {
+        // Créer un élément DOM à partir du template HTML
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = this.recordingItemTemplateHTML;
+        const element = wrapper.firstElementChild;
+
+        // Formater la date depuis le timestamp
+        const year = recording.timestamp.substring(0, 4);
+        const month = recording.timestamp.substring(4, 6);
+        const day = recording.timestamp.substring(6, 8);
+        const hour = recording.timestamp.substring(9, 11);
+        const min = recording.timestamp.substring(11, 13);
+        const sec = recording.timestamp.substring(13, 15);
+        const dateStr = `${day}/${month}/${year} ${hour}:${min}:${sec}`;
+
+        element.dataset.filename = recording.filename;
+        element.querySelector('.thought_recording-name').textContent = `Pensée ${dateStr}`;
+        element.querySelector('.thought_recording-date').textContent = dateStr;
+        element.querySelector('.thought_recording-duration').textContent = '-';
+        element.querySelector('.thought_recording-size').textContent = this.formatSize(recording.size);
+
+        const playBtn = element.querySelector('.thought_btn-play');
+        const downloadBtn = element.querySelector('.thought_btn-download');
+        const deleteBtn = element.querySelector('.thought_btn-delete');
+        const audioPlayer = element.querySelector('.thought_audio-player');
+        const playerContainer = element.querySelector('.thought_audio-player-container');
+
+        // Utiliser directement l'URL du fichier
+        const audioUrl = recording.url;
+
+        playBtn.addEventListener('click', () => {
+            if (playerContainer.style.display === 'none') {
+                playerContainer.style.display = 'block';
+                audioPlayer.src = audioUrl;
+                audioPlayer.play();
+                playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            } else {
+                if (audioPlayer.paused) {
+                    audioPlayer.play();
+                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                } else {
+                    audioPlayer.pause();
+                    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                }
+            }
+        });
+
+        audioPlayer.addEventListener('ended', () => {
+            playBtn.innerHTML = '<i class="fas fa-play"></i>';
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const a = document.createElement('a');
+            a.href = audioUrl;
+            a.download = recording.filename;
+            a.click();
+            this.showNotification('Téléchargement démarré', 'success');
+        });
+
+        deleteBtn.addEventListener('click', () => {
+            this.deleteRecording(recording.filename);
+        });
+
+        return element;
+    }
+
     renderRecordings() {
-        const listContainer = document.getElementById('recordingsList');
-        const countElement = document.querySelector('.recordings-count');
+        const listContainer = document.getElementById('thought_recordingsList');
+        const countElement = document.querySelector('.thought_recordings-count');
 
         if (!listContainer || !countElement) return;
 
-        countElement.textContent = `${this.recordings.length} fichiers`;
+        countElement.textContent = `${this.thought_recordings.length} fichiers`;
 
-        if (this.recordings.length === 0) {
+        if (this.thought_recordings.length === 0) {
             listContainer.innerHTML = `
-                <div class="empty-state">
+                <div class="thought_empty-state">
                     <i class="fas fa-microphone-slash"></i>
                     <p>Aucun enregistrement</p>
                     <span>Commencez par enregistrer votre première pensée</span>
@@ -343,74 +556,10 @@ class ThoughtCaptureModule {
         }
 
         listContainer.innerHTML = '';
-        const template = document.getElementById('recordingItemTemplate');
-        if (!template) {
-            console.error('Template non trouvé');
-            return;
-        }
 
-        this.recordings.forEach(recording => {
-            const item = template.content.cloneNode(true);
-            const element = item.querySelector('.recording-item');
-
-            // Formater la date depuis le timestamp
-            const year = recording.timestamp.substring(0, 4);
-            const month = recording.timestamp.substring(4, 6);
-            const day = recording.timestamp.substring(6, 8);
-            const hour = recording.timestamp.substring(9, 11);
-            const min = recording.timestamp.substring(11, 13);
-            const sec = recording.timestamp.substring(13, 15);
-            const dateStr = `${day}/${month}/${year} ${hour}:${min}:${sec}`;
-
-            element.dataset.filename = recording.filename;
-            item.querySelector('.recording-name').textContent = `Pensée ${dateStr}`;
-            item.querySelector('.recording-date').textContent = dateStr;
-            item.querySelector('.recording-duration').textContent = '-';
-            item.querySelector('.recording-size').textContent = this.formatSize(recording.size);
-
-            const playBtn = item.querySelector('.btn-play');
-            const downloadBtn = item.querySelector('.btn-download');
-            const deleteBtn = item.querySelector('.btn-delete');
-            const audioPlayer = item.querySelector('.audio-player');
-            const playerContainer = item.querySelector('.audio-player-container');
-
-            // Utiliser directement l'URL du fichier
-            const audioUrl = recording.url;
-
-            playBtn.addEventListener('click', () => {
-                if (playerContainer.style.display === 'none') {
-                    playerContainer.style.display = 'block';
-                    audioPlayer.src = audioUrl;
-                    audioPlayer.play();
-                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                } else {
-                    if (audioPlayer.paused) {
-                        audioPlayer.play();
-                        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    } else {
-                        audioPlayer.pause();
-                        playBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    }
-                }
-            });
-
-            audioPlayer.addEventListener('ended', () => {
-                playBtn.innerHTML = '<i class="fas fa-play"></i>';
-            });
-
-            downloadBtn.addEventListener('click', () => {
-                const a = document.createElement('a');
-                a.href = audioUrl;
-                a.download = recording.filename;
-                a.click();
-                this.showNotification('Téléchargement démarré', 'success');
-            });
-
-            deleteBtn.addEventListener('click', () => {
-                this.deleteRecording(recording.filename);
-            });
-
-            listContainer.appendChild(item);
+        this.thought_recordings.forEach(recording => {
+            const element = this.createRecordingElement(recording);
+            listContainer.appendChild(element);
         });
     }
 
@@ -444,7 +593,7 @@ class ThoughtCaptureModule {
 
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');
-        notification.className = 'thought-notification';
+        notification.className = 'thought_capture-notification';
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -455,7 +604,7 @@ class ThoughtCaptureModule {
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 10000;
-            animation: slideIn 0.3s ease;
+            animation: thought_slideIn 0.3s ease;
             max-width: 350px;
         `;
         notification.textContent = message;
@@ -463,7 +612,7 @@ class ThoughtCaptureModule {
         document.body.appendChild(notification);
 
         setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
+            notification.style.animation = 'thought_slideOut 0.3s ease';
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.remove();
@@ -473,23 +622,27 @@ class ThoughtCaptureModule {
     }
 
     cleanup() {
-        console.log('🧹 Nettoyage du module...');
+        console.log('Nettoyage du module...');
 
-        if (this.isRecording) {
+        // Arrêter l'enregistrement si en cours
+        if (this.thought_isRecording) {
             this.stopRecording();
         }
 
-        if (this.audioContext) {
-            this.audioContext.close();
-            this.audioContext = null;
+        // S'assurer que le timer est bien arrêté
+        if (this.thought_timerInterval) {
+            clearInterval(this.thought_timerInterval);
+            this.thought_timerInterval = null;
         }
 
-        if (this.timerInterval) {
-            clearInterval(this.timerInterval);
-            this.timerInterval = null;
+        // Fermer le contexte audio
+        if (this.thought_audioContext) {
+            this.thought_audioContext.close();
+            this.thought_audioContext = null;
         }
 
-        document.querySelectorAll('.thought-notification').forEach(notif => {
+        // Supprimer les notifications
+        document.querySelectorAll('.thought_capture-notification').forEach(notif => {
             notif.remove();
         });
 
@@ -497,7 +650,15 @@ class ThoughtCaptureModule {
     }
 }
 
+// Protection contre les redéclarations
+if (!window.thoughtCaptureModuleInstance) {
+    window.thoughtCaptureModuleInstance = null;
+}
+
 // Point d'entrée pour le dashboard
 window.initThoughtCaptureModule = function() {
-    return new ThoughtCaptureModule();
+    if (!window.thoughtCaptureModuleInstance) {
+        window.thoughtCaptureModuleInstance = new ThoughtCaptureModule();
+    }
+    return window.thoughtCaptureModuleInstance;
 };

@@ -1,5 +1,15 @@
-/* Styles du module Capture de Pensée - Version corrigée */
-.thought-capture-container {
+/**
+ * Module Capture de Pensée - Styles CSS
+ * Version avec préfixes thought_ pour éviter les conflits
+ */
+
+
+.hidden {
+    display: none !important;
+}
+
+/* Container principal */
+.thought_capture-container {
     width: 100%;
     height: 100%;
     padding: 2rem;
@@ -7,13 +17,14 @@
     overflow-y: auto;
 }
 
-.thought-header {
+/* Header */
+.thought_header {
     text-align: center;
     margin-bottom: 3rem;
-    animation: fadeInDown 0.6s ease;
+    animation: thought_fadeInDown 0.6s ease;
 }
 
-.thought-title {
+.thought_title {
     font-size: 2.5rem;
     font-weight: 600;
     color: #1e293b;
@@ -24,17 +35,18 @@
     gap: 1rem;
 }
 
-.thought-title i {
+.thought_title i {
     color: #feca57;
 }
 
-.thought-subtitle {
+.thought_subtitle {
     font-size: 1.125rem;
     color: #64748b;
     font-weight: 400;
 }
 
-.thought-content {
+/* Content wrapper */
+.thought_content {
     display: grid;
     grid-template-columns: minmax(350px, 450px) 1fr;
     gap: 2rem;
@@ -43,20 +55,20 @@
 }
 
 /* Cards communes */
-.card {
+.thought_card {
     background: white;
     border-radius: 16px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    overflow: visible; /* Changé de hidden à visible */
+    overflow: visible;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.card:hover {
+.thought_card:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-.card-header {
+.thought_card-header {
     padding: 1.5rem;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
@@ -64,7 +76,7 @@
     align-items: center;
 }
 
-.card-header h3 {
+.thought_card-header h3 {
     font-size: 1.25rem;
     font-weight: 600;
     color: #1e293b;
@@ -74,16 +86,16 @@
     margin: 0;
 }
 
-.card-body {
+.thought_card-body {
     padding: 1.5rem;
 }
 
-/* Section enregistrement - Correction du layout */
-.recording-section {
-    min-width: 0; /* Permet au contenu de se rétrécir */
+/* Section enregistrement */
+.thought_recording-section {
+    min-width: 0;
 }
 
-.recording-status {
+.thought_recording-status {
     padding: 0.375rem 1rem;
     border-radius: 20px;
     font-size: 0.875rem;
@@ -94,19 +106,19 @@
     white-space: nowrap;
 }
 
-.recording-status.recording {
+.thought_recording-status.thought_recording {
     background: #fef3c7;
     color: #d97706;
-    animation: pulse 2s infinite;
+    animation: thought_pulse 2s infinite;
 }
 
-.recording-status.paused {
+.thought_recording-status.thought_paused {
     background: #f3f4f6;
     color: #6b7280;
 }
 
 /* Visualiseur audio */
-.audio-visualizer {
+.thought_audio-visualizer {
     position: relative;
     width: 100%;
     height: 120px;
@@ -119,13 +131,13 @@
     justify-content: center;
 }
 
-#audioCanvas {
+#thought_audioCanvas {
     width: 100%;
     height: 100%;
     opacity: 0.8;
 }
 
-.visualizer-overlay {
+.thought_visualizer-overlay {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -135,7 +147,7 @@
     pointer-events: none;
 }
 
-.pulse-ring {
+.thought_pulse-ring {
     position: absolute;
     width: 60px;
     height: 60px;
@@ -144,20 +156,20 @@
     opacity: 0;
 }
 
-.recording .pulse-ring {
-    animation: pulseRing 3s ease-out infinite;
+.thought_recording .thought_pulse-ring {
+    animation: thought_pulseRing 3s ease-out infinite;
 }
 
-.pulse-ring:nth-child(2) {
+.thought_pulse-ring:nth-child(2) {
     animation-delay: 1s;
 }
 
-.pulse-ring:nth-child(3) {
+.thought_pulse-ring:nth-child(3) {
     animation-delay: 2s;
 }
 
 /* Timer */
-.recording-timer {
+.thought_recording-timer {
     text-align: center;
     font-size: 2rem;
     font-weight: 600;
@@ -166,17 +178,17 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Contrôles d'enregistrement - CORRIGÉ */
-.recording-controls {
+/* Contrôles d'enregistrement */
+.thought_recording-controls {
     display: flex;
     gap: 0.75rem;
     justify-content: center;
     margin-bottom: 2rem;
-    flex-wrap: wrap; /* Permet aux boutons de passer à la ligne si nécessaire */
+    flex-wrap: wrap;
 }
 
-.recording-controls button {
-    flex: 0 0 auto; /* Empêche les boutons de se rétrécir */
+.thought_recording-controls button {
+    flex: 0 0 auto;
     padding: 0.75rem 1.25rem;
     border: none;
     border-radius: 12px;
@@ -188,47 +200,47 @@
     align-items: center;
     gap: 0.5rem;
     font-family: 'Inter', sans-serif;
-    white-space: nowrap; /* Empêche le texte de se couper */
+    white-space: nowrap;
 }
 
-.btn-record {
+.thought_btn-record {
     background: #feca57;
     color: #78350f;
 }
 
-.btn-record:hover:not(:disabled) {
+.thought_btn-record:hover:not(:disabled) {
     background: #fbbf24;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(254, 202, 87, 0.4);
 }
 
-.btn-record.recording {
+.thought_btn-record.thought_recording {
     background: #ef4444;
     color: white;
-    animation: recordPulse 1.5s ease-in-out infinite;
+    animation: thought_recordPulse 1.5s ease-in-out infinite;
 }
 
-.btn-stop {
+.thought_btn-stop {
     background: #ef4444;
     color: white;
 }
 
-.btn-stop:hover:not(:disabled) {
+.thought_btn-stop:hover:not(:disabled) {
     background: #dc2626;
     transform: translateY(-2px);
 }
 
-.btn-pause {
+.thought_btn-pause {
     background: #6b7280;
     color: white;
 }
 
-.btn-pause:hover:not(:disabled) {
+.thought_btn-pause:hover:not(:disabled) {
     background: #4b5563;
     transform: translateY(-2px);
 }
 
-.btn-pause.paused {
+.thought_btn-pause.thought_paused {
     background: #10b981;
 }
 
@@ -238,18 +250,18 @@ button:disabled {
 }
 
 /* Niveau audio */
-.audio-level {
+.thought_audio-level {
     margin-top: 1.5rem;
 }
 
-.audio-level label {
+.thought_audio-level label {
     display: block;
     font-size: 0.875rem;
     color: #64748b;
     margin-bottom: 0.5rem;
 }
 
-.level-bar {
+.thought_level-bar {
     width: 100%;
     height: 8px;
     background: #e2e8f0;
@@ -257,7 +269,7 @@ button:disabled {
     overflow: hidden;
 }
 
-.level-fill {
+.thought_level-fill {
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, #10b981 0%, #fbbf24 50%, #ef4444 100%);
@@ -266,11 +278,11 @@ button:disabled {
 }
 
 /* Liste des enregistrements */
-.recordings-section {
+.thought_recordings-section {
     min-width: 0;
 }
 
-.recordings-count {
+.thought_recordings-count {
     background: #e0f2fe;
     color: #0369a1;
     padding: 0.25rem 0.75rem;
@@ -280,72 +292,76 @@ button:disabled {
     white-space: nowrap;
 }
 
-.recordings-list {
+.thought_recordings-list {
     max-height: 600px;
     overflow-y: auto;
 }
 
-.recordings-list::-webkit-scrollbar {
+.thought_recordings-list::-webkit-scrollbar {
     width: 6px;
 }
 
-.recordings-list::-webkit-scrollbar-track {
+.thought_recordings-list::-webkit-scrollbar-track {
     background: #f1f5f9;
     border-radius: 3px;
 }
 
-.recordings-list::-webkit-scrollbar-thumb {
+.thought_recordings-list::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 3px;
 }
 
+.thought_recordings-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
 /* État vide */
-.empty-state {
+.thought_empty-state {
     text-align: center;
     padding: 3rem;
     color: #94a3b8;
 }
 
-.empty-state i {
+.thought_empty-state i {
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.5;
 }
 
-.empty-state p {
+.thought_empty-state p {
     font-size: 1.125rem;
     font-weight: 500;
     margin-bottom: 0.5rem;
     color: #64748b;
 }
 
-.empty-state span {
+.thought_empty-state span {
     font-size: 0.875rem;
 }
 
 /* Item d'enregistrement */
-.recording-item {
+.thought_recording-item {
     padding: 1rem;
     border-bottom: 1px solid #e2e8f0;
     transition: background 0.3s ease;
-    animation: fadeIn 0.4s ease;
+    animation: thought_fadeIn 0.4s ease;
 }
 
-.recording-item:hover {
+.thought_recording-item:hover {
     background: #f8fafc;
 }
 
-.recording-item:last-child {
+.thought_recording-item:last-child {
     border-bottom: none;
 }
 
-.recording-info {
+.thought_recording-info {
     display: flex;
     gap: 1rem;
     margin-bottom: 0.75rem;
 }
 
-.recording-icon {
+.thought_recording-icon {
     width: 48px;
     height: 48px;
     background: #fef3c7;
@@ -358,12 +374,12 @@ button:disabled {
     flex-shrink: 0;
 }
 
-.recording-details {
+.thought_recording-details {
     flex: 1;
-    min-width: 0; /* Permet au texte de se tronquer proprement */
+    min-width: 0;
 }
 
-.recording-name {
+.thought_recording-name {
     font-size: 1rem;
     font-weight: 600;
     color: #1e293b;
@@ -373,7 +389,7 @@ button:disabled {
     white-space: nowrap;
 }
 
-.recording-meta {
+.thought_recording-meta {
     display: flex;
     gap: 1rem;
     font-size: 0.875rem;
@@ -381,21 +397,21 @@ button:disabled {
     flex-wrap: wrap;
 }
 
-.recording-meta span {
+.thought_recording-meta span {
     display: flex;
     align-items: center;
     gap: 0.25rem;
 }
 
 /* Actions */
-.recording-actions {
+.thought_recording-actions {
     display: flex;
     gap: 0.5rem;
     justify-content: flex-end;
     flex-shrink: 0;
 }
 
-.btn-action {
+.thought_btn-action {
     width: 36px;
     height: 36px;
     border: none;
@@ -409,39 +425,52 @@ button:disabled {
     transition: all 0.3s ease;
 }
 
-.btn-action:hover {
+.thought_btn-action:hover {
     transform: translateY(-2px);
 }
 
-.btn-play:hover {
+.thought_btn-play:hover {
     background: #dbeafe;
     color: #2563eb;
 }
 
-.btn-download:hover {
+.thought_btn-download:hover {
     background: #d1fae5;
     color: #059669;
 }
 
-.btn-delete:hover {
+.thought_btn-delete:hover {
     background: #fee2e2;
     color: #dc2626;
 }
 
 /* Player audio */
-.audio-player-container {
+.thought_audio-player-container {
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px solid #e2e8f0;
 }
 
-.audio-player {
+.thought_audio-player {
     width: 100%;
     height: 40px;
 }
 
+/* Notifications */
+.thought_capture-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    max-width: 350px;
+    animation: thought_slideIn 0.3s ease;
+}
+
 /* Animations */
-@keyframes fadeInDown {
+@keyframes thought_fadeInDown {
     from {
         opacity: 0;
         transform: translateY(-20px);
@@ -452,7 +481,7 @@ button:disabled {
     }
 }
 
-@keyframes fadeIn {
+@keyframes thought_fadeIn {
     from {
         opacity: 0;
         transform: translateX(-10px);
@@ -463,7 +492,7 @@ button:disabled {
     }
 }
 
-@keyframes pulse {
+@keyframes thought_pulse {
     0%, 100% {
         opacity: 1;
     }
@@ -472,7 +501,7 @@ button:disabled {
     }
 }
 
-@keyframes pulseRing {
+@keyframes thought_pulseRing {
     0% {
         transform: scale(0.5);
         opacity: 1;
@@ -483,7 +512,7 @@ button:disabled {
     }
 }
 
-@keyframes recordPulse {
+@keyframes thought_recordPulse {
     0%, 100% {
         box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
     }
@@ -492,67 +521,89 @@ button:disabled {
     }
 }
 
-/* Responsive */
+@keyframes thought_slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes thought_slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Responsive Design */
 @media (max-width: 1200px) {
-    .thought-content {
+    .thought_content {
         grid-template-columns: minmax(320px, 400px) 1fr;
         gap: 1.5rem;
     }
 }
 
 @media (max-width: 1024px) {
-    .thought-content {
+    .thought_content {
         grid-template-columns: 1fr;
         max-width: 600px;
     }
     
-    .recording-section,
-    .recordings-section {
+    .thought_recording-section,
+    .thought_recordings-section {
         width: 100%;
     }
 }
 
 @media (max-width: 640px) {
-    .thought-capture-container {
+    .thought_capture-container {
         padding: 1rem;
     }
     
-    .thought-title {
+    .thought_title {
         font-size: 2rem;
     }
     
-    .thought-content {
+    .thought_content {
         gap: 1rem;
     }
     
-    .card-header {
+    .thought_card-header {
         padding: 1rem;
         flex-wrap: wrap;
         gap: 0.5rem;
     }
     
-    .card-body {
+    .thought_card-body {
         padding: 1rem;
     }
     
-    .recording-controls {
+    .thought_recording-controls {
         gap: 0.5rem;
     }
     
-    .recording-controls button {
+    .thought_recording-controls button {
         padding: 0.625rem 1rem;
         font-size: 0.875rem;
     }
     
-    .recording-timer {
+    .thought_recording-timer {
         font-size: 1.75rem;
     }
     
-    .recording-info {
+    .thought_recording-info {
         gap: 0.75rem;
     }
     
-    .recording-icon {
+    .thought_recording-icon {
         width: 40px;
         height: 40px;
         font-size: 1rem;
@@ -560,38 +611,15 @@ button:disabled {
 }
 
 @media (max-width: 480px) {
-    .recording-controls button span {
-        display: none; /* Cache le texte sur très petits écrans */
+    .thought_recording-controls button span {
+        display: none;
     }
     
-    .recording-controls button {
+    .thought_recording-controls button {
         padding: 0.75rem;
     }
     
-    .recording-controls button i {
+    .thought_recording-controls button i {
         margin: 0;
-    }
-}
-
-/* Animations pour les notifications */
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOut {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
     }
 }
