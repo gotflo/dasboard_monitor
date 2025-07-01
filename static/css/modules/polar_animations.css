@@ -1,0 +1,217 @@
+/* ===============================================
+   MODULE POLAR - ANIMATIONS
+   =============================================== */
+
+/* Animations de base */
+@keyframes polar_fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes polar_slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes polar_spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Animation du cœur */
+@keyframes polar_heartbeat {
+  0% {
+    transform: scale(1);
+    text-shadow: 0 0 15px rgba(220, 38, 38, 0.6);
+  }
+  25% {
+    transform: scale(1.15);
+    text-shadow: 0 0 25px rgba(220, 38, 38, 0.8);
+  }
+  50% {
+    transform: scale(1.05);
+    text-shadow: 0 0 20px rgba(220, 38, 38, 0.7);
+  }
+  75% {
+    transform: scale(1.1);
+    text-shadow: 0 0 22px rgba(220, 38, 38, 0.75);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 15px rgba(220, 38, 38, 0.6);
+  }
+}
+
+/* Animation de battement solo */
+@keyframes polar_heartbeat-solo {
+  0% {
+    transform: scale(1);
+    text-shadow: 0 0 20px rgba(220, 38, 38, 0.8);
+  }
+  25% {
+    transform: scale(1.25);
+    text-shadow: 0 0 30px rgba(220, 38, 38, 1);
+  }
+  50% {
+    transform: scale(1.1);
+    text-shadow: 0 0 25px rgba(220, 38, 38, 0.9);
+  }
+  75% {
+    transform: scale(1.2);
+    text-shadow: 0 0 28px rgba(220, 38, 38, 0.95);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 20px rgba(220, 38, 38, 0.8);
+  }
+}
+
+/* Classes d'animation pour le cœur */
+.polar_heart-icon.polar_beating {
+  animation: polar_heartbeat 0.6s ease-out;
+}
+
+.polar_monitoring-grid.polar_single-device .polar_heart-icon.polar_beating {
+  animation: polar_heartbeat-solo 0.7s ease-out;
+}
+
+/* Animation de pulsation */
+@keyframes polar_pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+/* Animation de clignotement */
+@keyframes polar_blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+/* Animation du spinner */
+@keyframes polar_heartPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  }
+}
+
+/* Animation des métriques */
+@keyframes polar_metricUpdate {
+  0% {
+    transform: scale(1);
+    color: inherit;
+  }
+  50% {
+    transform: scale(1.05);
+    color: var(--polar-secondary);
+  }
+  100% {
+    transform: scale(1);
+    color: inherit;
+  }
+}
+
+.polar_metric-value.polar_updating {
+  animation: polar_metricUpdate 0.3s ease-out;
+}
+
+/* Animation de chargement */
+@keyframes polar_shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.polar_loading-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 200% 100%;
+  animation: polar_shimmer 2s infinite;
+}
+
+/* Animation des toasts */
+.polar_toast.polar_removing {
+  animation: polar_slideOut 0.3s ease forwards;
+}
+
+@keyframes polar_slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Animations de transition entre modes */
+@keyframes polar_slideInSingle {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes polar_slideInDual {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+.polar_device-card.polar_animating-in-single {
+  animation: polar_slideInSingle 0.6s ease-out forwards;
+}
+
+.polar_device-card.polar_animating-in-dual {
+  animation: polar_slideInDual 0.5s ease-out forwards;
+}
+
+/* Préférence mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .polar_heart-icon,
+  .polar_status-dot {
+    animation: none !important;
+  }
+}

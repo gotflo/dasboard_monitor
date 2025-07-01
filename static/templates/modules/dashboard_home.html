@@ -1,0 +1,407 @@
+<!-- Module Dashboard Home - Page d'accueil centralisée -->
+<div class="home_container">
+    <!-- Header avec contrôles globaux -->
+    <header class="home_header">
+        <div class="home_header-content">
+            <div class="home_header-title">
+                <p class="home_subtitle">Vue d'ensemble des modules</p>
+            </div>
+            
+            <div class="home_header-controls">
+                <button class="home_control-btn home_btn-start" id="homeStartCollection" title="Démarrer la collecte globale">
+                    <i class="fas fa-play"></i>
+                    <span>Démarrer la collecte</span>
+                </button>
+                
+                <button class="home_control-btn home_btn-stop" id="homeStopCollection" disabled title="Arrêter la collecte">
+                    <i class="fas fa-stop"></i>
+                    <span>Arrêter</span>
+                </button>
+                
+                <button class="home_control-btn home_btn-download" id="homeDownloadData" title="Télécharger toutes les données">
+                    <i class="fas fa-download"></i>
+                    <span>Télécharger</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Grille des modules -->
+    <main class="home_modules-grid">
+        
+        <!-- Carte Polar H10  -->
+        <div class="home_module-card" data-module="polar">
+            <div class="home_card-header">
+                <div class="home_card-icon" style="background: linear-gradient(135deg, #ff6b6b, #ff8787);">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+                <div class="home_card-title">
+                    <h3>Polar H10</h3>
+                </div>
+                <div class="home_card-status">
+                    <span class="home_status-badge" id="homePolarStatus">Déconnecté</span>
+                </div>
+            </div>
+            
+            <div class="home_card-body">
+                <div class="home_metrics-row">
+                    <div class="home_metric">
+                        <div class="home_metric-value" id="homePolarBPM">--</div>
+                        <div class="home_metric-label">BPM</div>
+                        <div class="home_metric-icon"><i class="fas fa-heart"></i></div>
+                    </div>
+                    <div class="home_metric">
+                        <div class="home_metric-value" id="homePolarRR">--</div>
+                        <div class="home_metric-label">RR (ms)</div>
+                        <div class="home_metric-icon"><i class="fas fa-wave-square"></i></div>
+                    </div>
+                    <div class="home_metric">
+                        <div class="home_metric-value" id="homePolarResp">--</div>
+                        <div class="home_metric-label">Resp/min</div>
+                        <div class="home_metric-icon"><i class="fas fa-lungs"></i></div>
+                    </div>
+                </div>
+                
+                <div class="home_mini-chart" id="homePolarChart">
+                    <canvas id="homePolarSenseCanvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="home_card-footer">
+                <button class="home_card-action" onclick="window.dashboard.navigateToModule('polar')">
+                    <i class="fas fa-external-link-alt"></i> Voir détails
+                </button>
+            </div>
+        </div>
+        
+        <!-- Verity Sense -->
+        <div class="home_module-card" data-module="polar">
+            <div class="home_card-header">
+                <div class="home_card-icon" style="background: linear-gradient(135deg, #667eea 0%, #818cf8 100%);">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <div class="home_card-title">
+                    <h3>Polar Verity Sense</h3>
+                </div>
+                <div class="home_card-status">
+                    <span class="home_status-badge" id="homePolarSenseStatus">Déconnecté</span>
+                </div>
+            </div>
+            
+            <div class="home_card-body">
+                <div class="home_metrics-row">
+                    <div class="home_metric">
+                        <div class="home_metric-value" id="homePolarSenseBPM">--</div>
+                        <div class="home_metric-label">BPM</div>
+                        <div class="home_metric-icon"><i class="fas fa-heart"></i></div>
+                    </div>
+                    <div class="home_metric">
+                        <div class="home_metric-value" id="homePolaSenserRR">--</div>
+                        <div class="home_metric-label">RR (ms)</div>
+                        <div class="home_metric-icon"><i class="fas fa-wave-square"></i></div>
+                    </div>
+                    <div class="home_metric">
+                        <div class="home_metric-value" id="homePolarSenseResp">--</div>
+                        <div class="home_metric-label">Resp/min</div>
+                        <div class="home_metric-icon"><i class="fas fa-lungs"></i></div>
+                    </div>
+                </div>
+                
+                <div class="home_mini-chart" id="homePolarSenseChart">
+                    <canvas id="homePolarCanvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="home_card-footer">
+                <button class="home_card-action" onclick="window.dashboard.navigateToModule('polar')">
+                    <i class="fas fa-external-link-alt"></i> Voir détails
+                </button>
+            </div>
+        </div>
+
+        <!-- Carte Neurosity EEG Crown -->
+        <div class="home_module-card" data-module="neurosity">
+            <div class="home_card-header">
+                <div class="home_card-icon" style="background: linear-gradient(135deg, #4ecdc4, #44d9cd);">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="home_card-title">
+                    <h3>EEG Crown</h3>
+                    <span class="home_card-subtitle">Neurosity</span>
+                </div>
+                <div class="home_card-status">
+                    <span class="home_status-badge" id="homeNeurosityStatus">Déconnecté</span>
+                </div>
+            </div>
+            
+            <div class="home_card-body">
+                <div class="home_eeg-metrics">
+                    <div class="home_eeg-item">
+                        <div class="home_eeg-header">
+                            <span class="home_eeg-label">Calme</span>
+                            <span class="home_eeg-percent" id="homeCalmPercent">0%</span>
+                        </div>
+                        <div class="home_progress-bar">
+                            <div class="home_progress-fill home_calm-fill" id="homeCalmProgress"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="home_eeg-item">
+                        <div class="home_eeg-header">
+                            <span class="home_eeg-label">Concentration</span>
+                            <span class="home_eeg-percent" id="homeFocusPercent">0%</span>
+                        </div>
+                        <div class="home_progress-bar">
+                            <div class="home_progress-fill home_focus-fill" id="homeFocusProgress"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="home_brainwaves-mini">
+                    <canvas id="homeBrainwavesCanvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="home_card-footer">
+                <button class="home_card-action" onclick="window.dashboard.navigateToModule('neurosity')">
+                    <i class="fas fa-external-link-alt"></i> Voir détails
+                </button>
+            </div>
+        </div>
+
+        <!-- Carte Caméra Thermique -->
+        <div class="home_module-card" data-module="thermal_camera">
+            <div class="home_card-header">
+                <div class="home_card-icon" style="background: linear-gradient(135deg, #45b7d1, #5fc3e4);">
+                    <i class="fas fa-thermometer-half"></i>
+                </div>
+                <div class="home_card-title">
+                    <h3>Caméra Thermique</h3>
+                    <span class="home_card-subtitle">Détection</span>
+                </div>
+                <div class="home_card-status">
+                    <span class="home_status-badge" id="homeThermalStatus">Hors ligne</span>
+                </div>
+            </div>
+            
+            <div class="home_card-body">
+                <div class="home_thermal-viz">
+                    <div class="home_face-heatmap">
+                        <svg viewBox="0 0 200 250" class="home_face-svg">
+                            <!-- Contour du visage stylisé -->
+                            <defs>
+                                <linearGradient id="faceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#f0f0f0;stop-opacity:0.3" />
+                                    <stop offset="100%" style="stop-color:#e0e0e0;stop-opacity:0.1" />
+                                </linearGradient>
+                            </defs>
+                            
+                            <!-- Visage -->
+                            <ellipse cx="100" cy="125" rx="70" ry="90" fill="url(#faceGradient)" stroke="#e0e0e0" stroke-width="2" opacity="0.5"/>
+                            
+                            <!-- Points de température -->
+                            <g id="homeThermalPoints">
+                                <circle cx="100" cy="60" r="8" fill="#ffd93d" data-point="Front" class="home_temp-point">
+                                    <title>Front: --°C</title>
+                                </circle>
+                                <circle cx="70" cy="100" r="8" fill="#6bcf7f" data-point="Oeil_Gauche" class="home_temp-point">
+                                    <title>Œil Gauche: --°C</title>
+                                </circle>
+                                <circle cx="130" cy="100" r="8" fill="#6bcf7f" data-point="Oeil_Droit" class="home_temp-point">
+                                    <title>Œil Droit: --°C</title>
+                                </circle>
+                                <circle cx="100" cy="120" r="8" fill="#ff6b6b" data-point="Nez" class="home_temp-point">
+                                    <title>Nez: --°C</title>
+                                </circle>
+                                <circle cx="60" cy="130" r="8" fill="#4ecdc4" data-point="Joue_Gauche" class="home_temp-point">
+                                    <title>Joue Gauche: --°C</title>
+                                </circle>
+                                <circle cx="140" cy="130" r="8" fill="#4ecdc4" data-point="Joue_Droite" class="home_temp-point">
+                                    <title>Joue Droite: --°C</title>
+                                </circle>
+                                <circle cx="100" cy="160" r="8" fill="#ff8787" data-point="Bouche" class="home_temp-point">
+                                    <title>Bouche: --°C</title>
+                                </circle>
+                                <circle cx="100" cy="190" r="8" fill="#45b7d1" data-point="Menton" class="home_temp-point">
+                                    <title>Menton: --°C</title>
+                                </circle>
+                            </g>
+                            
+                            <!-- Température moyenne -->
+                            <text x="100" y="235" text-anchor="middle" class="home_temp-label">
+                                Moy: <tspan id="homeThermalAvg">--</tspan>°C
+                            </text>
+                        </svg>
+                    </div>
+                    
+                    <div class="home_thermal-chart">
+                        <canvas id="homeThermalCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="home_card-footer">
+                <button class="home_card-action" onclick="window.dashboard.navigateToModule('thermal_camera')">
+                    <i class="fas fa-external-link-alt"></i> Voir détails
+                </button>
+            </div>
+        </div>
+
+        <!-- Carte Gazepoint -->
+        <div class="home_module-card" data-module="gazepoint">
+            <div class="home_card-header">
+                <div class="home_card-icon" style="background: linear-gradient(135deg, #96ceb4, #a8d8c4);">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="home_card-title">
+                    <h3>Gazepoint</h3>
+                    <span class="home_card-subtitle">Suivi oculaire</span>
+                </div>
+                <div class="home_card-status">
+                    <span class="home_status-badge" id="homeGazepointStatus">Déconnecté</span>
+                </div>
+            </div>
+            
+            <div class="home_card-body">
+                <div class="home_gaze-metrics">
+                    <div class="home_eye-viz">
+                        <div class="home_eye-container">
+                            <div class="home_eye">
+                                <div class="home_pupil" id="homeLeftPupil"></div>
+                            </div>
+                            <div class="home_eye">
+                                <div class="home_pupil" id="homeRightPupil"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="home_pupil-data">
+                            <div class="home_pupil-metric">
+                                <span class="home_pupil-label">Dilatation</span>
+                                <span class="home_pupil-value" id="homePupilSize">-- mm</span>
+                            </div>
+                            <div class="home_pupil-metric">
+                                <span class="home_pupil-label">Fixation</span>
+                                <span class="home_pupil-value" id="homeFixation">-- ms</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="home_gaze-heatmap">
+                        <canvas id="homeGazeCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="home_card-footer">
+                <button class="home_card-action" onclick="window.dashboard.navigateToModule('gazepoint')">
+                    <i class="fas fa-external-link-alt"></i> Voir détails
+                </button>
+            </div>
+        </div>
+
+        <!-- Carte Capture de Pensée -->
+        <div class="home_module-card" data-module="thought_capture">
+            <div class="home_card-header">
+                <div class="home_card-icon" style="background: linear-gradient(135deg, #feca57, #ffd93d);">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <div class="home_card-title">
+                    <h3>Capture de Pensée</h3>
+                    <span class="home_card-subtitle">Enregistrement audio</span>
+                </div>
+                <div class="home_card-status">
+                    <span class="home_status-badge" id="homeThoughtStatus">Prêt</span>
+                </div>
+            </div>
+            
+            <div class="home_card-body">
+                <div class="home_audio-info">
+                    <div class="home_audio-viz">
+                        <canvas id="homeAudioCanvas"></canvas>
+                    </div>
+                    
+                    <div class="home_recording-info">
+                        <div class="home_recording-timer" id="homeRecordingTimer">
+                            <i class="fas fa-clock"></i>
+                            <span id="homeRecordingTime">00:00</span>
+                        </div>
+                        
+                        <div class="home_audio-level">
+                            <i class="fas fa-microphone"></i>
+                            <div class="home_level-bar">
+                                <div class="home_level-fill" id="homeAudioLevel"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="home_last-recording">
+                            <i class="fas fa-file-audio"></i>
+                            <span id="homeLastRecording">Aucun enregistrement</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="home_card-footer">
+                <button class="home_card-action" onclick="window.dashboard.navigateToModule('thought_capture')">
+                    <i class="fas fa-external-link-alt"></i> Voir détails
+                </button>
+            </div>
+        </div>
+
+        <!-- Carte Statistiques Globales -->
+        <div class="home_module-card home_stats-card">
+            <div class="home_card-header">
+                <div class="home_card-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="home_card-title">
+                    <h3>Statistiques Globales</h3>
+                    <span class="home_card-subtitle">Vue d'ensemble</span>
+                </div>
+            </div>
+            
+            <div class="home_card-body">
+                <div class="home_global-stats">
+                    <div class="home_stat-item">
+                        <div class="home_stat-value" id="homeActiveModules">0</div>
+                        <div class="home_stat-label">Modules actifs</div>
+                    </div>
+                    <div class="home_stat-item">
+                        <div class="home_stat-value" id="homeDataPoints">0</div>
+                        <div class="home_stat-label">Points de données</div>
+                    </div>
+                    <div class="home_stat-item">
+                        <div class="home_stat-value" id="homeSessionTime">00:00</div>
+                        <div class="home_stat-label">Durée session</div>
+                    </div>
+                    <div class="home_stat-item">
+                        <div class="home_stat-value" id="homeStorageUsed">0 MB</div>
+                        <div class="home_stat-label">Stockage utilisé</div>
+                    </div>
+                </div>
+                
+                <div class="home_activity-timeline">
+                    <div class="home_timeline-header">Activité récente</div>
+                    <div class="home_timeline-content" id="homeActivityTimeline">
+                        <div class="home_timeline-item">
+                            <span class="home_timeline-dot"></span>
+                            <span class="home_timeline-text">En attente de données...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="home_footer">
+        <div class="home_footer-content">
+            <span class="home_separator">•</span>
+            <span id="homeDateTime"></span>
+        </div>
+    </footer>
+</div>
+
+<!-- Toast Container -->
+<div id="homeToastContainer" class="home_toast-container"></div>

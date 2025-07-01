@@ -1,7 +1,485 @@
-<!-- Template Module Polar -->
-<div class="module-container">
-    <div class="module-content">
-        <h1 class="module-title">Polar Monitor</h1>
-        <p class="module-subtitle">H10 / Verity Sense</p>
+<!-- Module Polar - Interface intégrée au dashboard -->
+<div class="polar_module-container">
+    <!-- Header du module -->
+    <div class="polar_module-header">
+        <div class="polar_header-content">
+            <div class="polar_header-title">
+                <div class="polar_title-icon">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+                <div class="polar_title-text">
+                    <h2>Polar Monitor</h2>
+                    <p>Surveillance cardiaque temps réel</p>
+                </div>
+            </div>
+            
+            <div class="polar_controls-section">
+                <div class="polar_devices-counter" id="polar_devicesCounter">
+                    <i class="fas fa-devices"></i>
+                    <span class="polar_count" id="polar_deviceCount">0</span>
+                    <span>/ 2</span>
+                </div>
+                
+                <!-- Contrôles CSV -->
+                <div class="polar_csv-controls" id="polar_csvControls">
+                    <div class="polar_csv-status-indicator">
+                        <div class="polar_csv-status-dot polar_idle" id="polar_csvStatusDot"></div>
+                        <span id="polar_csvStatusText">CSV Prêt</span>
+                    </div>
+                    
+                    <button class="polar_btn polar_btn-record" id="polar_recordToggleBtn" type="button" disabled>
+                        <i class="fas fa-record-vinyl" id="polar_recordToggleIcon"></i>
+                        <span id="polar_recordToggleText">Enregistrer</span>
+                    </button>
+                    
+                    <button class="polar_btn polar_btn-download" id="polar_downloadBtn" type="button">
+                        <i class="fas fa-download"></i>
+                        <span>Télécharger</span>
+                    </button>
+                    
+                    <div class="polar_csv-session-info polar_hidden" id="polar_csvSessionInfo">
+                        <span id="polar_sessionDuration">00:00</span>
+                    </div>
+                </div>
+                
+                <button class="polar_btn polar_btn-primary" id="polar_connectBtn">
+                    <i class="fab fa-bluetooth"></i>
+                    <span>Connexion</span>
+                </button>
+                
+                <button class="polar_btn polar_btn-danger polar_hidden" id="polar_disconnectBtn">
+                    <i class="fas fa-unlink"></i>
+                    <span>Déconnecter</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grille de monitoring -->
+    <div class="polar_monitoring-grid" id="polar_monitoringGrid">
+        <!-- Carte Polar H10 -->
+        <div class="polar_device-card polar_h10-card polar_inactive" id="polar_h10Card">
+            <div class="polar_device-header">
+                <div class="polar_device-info">
+                    <div class="polar_device-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <div class="polar_device-details">
+                        <h3>Polar H10</h3>
+                        <div class="polar_device-id" id="polar_h10DeviceId">Non connecté</div>
+                    </div>
+                </div>
+                <div class="polar_device-status" id="polar_h10Status">
+                    <span class="polar_status-dot"></span>
+                    <span>Déconnecté</span>
+                </div>
+            </div>
+            
+            <div class="polar_device-content">
+                <!-- Section cœur -->
+                <div class="polar_heart-section">
+                    <div class="polar_heart-display">
+                        <i class="fas fa-heart polar_heart-icon" id="polar_h10HeartIcon"></i>
+                    </div>
+                    
+                    <div class="polar_heart-rate-values">
+                        <div class="polar_bpm-value">
+                            <span class="polar_bpm-number" id="polar_h10HeartRate">--</span>
+                            <span class="polar_bpm-unit">bpm</span>
+                        </div>
+                        <div class="polar_heart-zone-indicator" id="polar_h10ZoneIndicator">
+                            <span id="polar_h10ZoneLabel">En attente</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Métriques temps réel -->
+                <div class="polar_real-time-metrics">
+                    <div class="polar_metrics-group">
+                        <div class="polar_metrics-header">
+                            <i class="fas fa-chart-line"></i>
+                            <span>RR Intervals</span>
+                        </div>
+                        <div class="polar_metrics-row">
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Dernier</span>
+                                <span class="polar_metric-value" id="polar_h10LastRR">--</span>
+                                <span class="polar_metric-unit">ms</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Moyenne</span>
+                                <span class="polar_metric-value" id="polar_h10MeanRR">--</span>
+                                <span class="polar_metric-unit">ms</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">RMSSD</span>
+                                <span class="polar_metric-value" id="polar_h10RMSSD">--</span>
+                                <span class="polar_metric-unit">ms</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="polar_metrics-group">
+                        <div class="polar_metrics-header">
+                            <i class="fas fa-heartbeat"></i>
+                            <span>BPM Stats</span>
+                        </div>
+                        <div class="polar_metrics-row">
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Moyenne</span>
+                                <span class="polar_metric-value" id="polar_h10MeanBPM">--</span>
+                                <span class="polar_metric-unit">bpm</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Min</span>
+                                <span class="polar_metric-value" id="polar_h10MinBPM">--</span>
+                                <span class="polar_metric-unit">bpm</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Max</span>
+                                <span class="polar_metric-value" id="polar_h10MaxBPM">--</span>
+                                <span class="polar_metric-unit">bpm</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="polar_metrics-group">
+                        <div class="polar_metrics-header">
+                            <i class="fas fa-lungs"></i>
+                            <span>Respiration</span>
+                        </div>
+                        <div class="polar_metrics-row">
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Fréq.</span>
+                                <span class="polar_metric-value" id="polar_h10BreathingFreq">--</span>
+                                <span class="polar_metric-unit">rpm</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Amplitude</span>
+                                <span class="polar_metric-value" id="polar_h10BreathingAmp">--</span>
+                                <span class="polar_metric-unit">%</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Qualité</span>
+                                <span class="polar_metric-value" id="polar_h10BreathingQuality">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Graphique RR -->
+                <div class="polar_chart-container">
+                    <div class="polar_chart-header">
+                        <h4>Intervalles RR</h4>
+                        <div class="polar_chart-controls">
+                            <button class="polar_chart-btn" onclick="window.polarModuleInstance.resetChart('h10')" title="Reset">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="polar_chart-canvas">
+                        <canvas id="polar_h10Chart"></canvas>
+                        <div class="polar_chart-overlay polar_active" id="polar_h10ChartOverlay">
+                            <div class="polar_chart-overlay-icon">
+                                <i class="fas fa-heartbeat"></i>
+                            </div>
+                            <div class="polar_chart-overlay-text">En attente</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Carte Polar Verity Sense -->
+        <div class="polar_device-card polar_verity-card polar_inactive" id="polar_verityCard">
+            <div class="polar_device-header">
+                <div class="polar_device-info">
+                    <div class="polar_device-icon">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                    <div class="polar_device-details">
+                        <h3>Polar Verity Sense</h3>
+                        <div class="polar_device-id" id="polar_verityDeviceId">Non connecté</div>
+                    </div>
+                </div>
+                <div class="polar_device-status" id="polar_verityStatus">
+                    <span class="polar_status-dot"></span>
+                    <span>Déconnecté</span>
+                </div>
+            </div>
+            
+            <div class="polar_device-content">
+                <!-- Section cœur -->
+                <div class="polar_heart-section">
+                    <div class="polar_heart-display">
+                        <i class="fas fa-heart polar_heart-icon" id="polar_verityHeartIcon"></i>
+                    </div>
+                    
+                    <div class="polar_heart-rate-values">
+                        <div class="polar_bpm-value">
+                            <span class="polar_bpm-number" id="polar_verityHeartRate">--</span>
+                            <span class="polar_bpm-unit">bpm</span>
+                        </div>
+                        <div class="polar_heart-zone-indicator" id="polar_verityZoneIndicator">
+                            <span id="polar_verityZoneLabel">En attente</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Métriques temps réel -->
+                <div class="polar_real-time-metrics">
+                    <div class="polar_metrics-group">
+                        <div class="polar_metrics-header">
+                            <i class="fas fa-chart-line"></i>
+                            <span>RR Intervals</span>
+                        </div>
+                        <div class="polar_metrics-row">
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Dernier</span>
+                                <span class="polar_metric-value" id="polar_verityLastRR">--</span>
+                                <span class="polar_metric-unit">ms</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Moyenne</span>
+                                <span class="polar_metric-value" id="polar_verityMeanRR">--</span>
+                                <span class="polar_metric-unit">ms</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">RMSSD</span>
+                                <span class="polar_metric-value" id="polar_verityRMSSD">--</span>
+                                <span class="polar_metric-unit">ms</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="polar_metrics-group">
+                        <div class="polar_metrics-header">
+                            <i class="fas fa-heartbeat"></i>
+                            <span>BPM Stats</span>
+                        </div>
+                        <div class="polar_metrics-row">
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Moyenne</span>
+                                <span class="polar_metric-value" id="polar_verityMeanBPM">--</span>
+                                <span class="polar_metric-unit">bpm</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Min</span>
+                                <span class="polar_metric-value" id="polar_verityMinBPM">--</span>
+                                <span class="polar_metric-unit">bpm</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Max</span>
+                                <span class="polar_metric-value" id="polar_verityMaxBPM">--</span>
+                                <span class="polar_metric-unit">bpm</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="polar_metrics-group">
+                        <div class="polar_metrics-header">
+                            <i class="fas fa-lungs"></i>
+                            <span>Respiration</span>
+                        </div>
+                        <div class="polar_metrics-row">
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Fréq.</span>
+                                <span class="polar_metric-value" id="polar_verityBreathingFreq">--</span>
+                                <span class="polar_metric-unit">rpm</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Amplitude</span>
+                                <span class="polar_metric-value" id="polar_verityBreathingAmp">--</span>
+                                <span class="polar_metric-unit">%</span>
+                            </div>
+                            <div class="polar_metric-compact">
+                                <span class="polar_metric-label">Qualité</span>
+                                <span class="polar_metric-value" id="polar_verityBreathingQuality">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Graphique RR -->
+                <div class="polar_chart-container">
+                    <div class="polar_chart-header">
+                        <h4>Intervalles RR</h4>
+                        <div class="polar_chart-controls">
+                            <button class="polar_chart-btn" onclick="window.polarModuleInstance.resetChart('verity')" title="Reset">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="polar_chart-canvas">
+                        <canvas id="polar_verityChart"></canvas>
+                        <div class="polar_chart-overlay polar_active" id="polar_verityChartOverlay">
+                            <div class="polar_chart-overlay-icon">
+                                <i class="fas fa-user-clock"></i>
+                            </div>
+                            <div class="polar_chart-overlay-text">En attente</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panneau de comparaison -->
+    <div class="polar_comparison-panel" id="polar_comparisonPanel">
+        <div class="polar_section-header">
+            <div class="polar_section-icon">
+                <i class="fas fa-analytics"></i>
+            </div>
+            <div class="polar_section-title">
+                <h3>Analyse Comparative</h3>
+                <div class="polar_section-subtitle">Synchronisation et métriques croisées</div>
+            </div>
+        </div>
+        
+        <div class="polar_comparison-metrics">
+            <div class="polar_comparison-metric">
+                <h4>Différence BPM</h4>
+                <div class="polar_metric-value" id="polar_hrDifference">--</div>
+                <span class="polar_metric-unit">bpm</span>
+            </div>
+            <div class="polar_comparison-metric">
+                <h4>Sync RR</h4>
+                <div class="polar_metric-value" id="polar_rrDifference">--</div>
+                <span class="polar_metric-unit">ms</span>
+            </div>
+            <div class="polar_comparison-metric">
+                <h4>Cohérence Resp.</h4>
+                <div class="polar_metric-value" id="polar_breathingSync">--</div>
+                <span class="polar_metric-unit">%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de connexion -->
+    <div class="polar_connection-modal" id="polar_connectionModal">
+        <div class="polar_modal-content">
+            <div class="polar_modal-header">
+                <button class="polar_modal-close" id="polar_modalCloseBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h3>
+                    <i class="fas fa-bluetooth"></i>
+                    Connexion Bluetooth
+                </h3>
+                <div class="polar_subtitle">Sélectionnez vos appareils</div>
+            </div>
+            
+            <div class="polar_modal-body" id="polar_modalBody">
+                <div class="polar_no-devices" id="polar_noDevices" style="display: none;">
+                    <div class="polar_no-devices-icon">
+                        <i class="fas fa-bluetooth-b"></i>
+                    </div>
+                    <h4>Aucun appareil détecté</h4>
+                    <p>Vérifiez que vos appareils sont allumés</p>
+                    <button class="polar_btn polar_btn-primary" onclick="window.polarModuleInstance.retryConnection()">
+                        <i class="fas fa-redo"></i>
+                        Relancer
+                    </button>
+                </div>
+                
+                <div id="polar_devicesList"></div>
+            </div>
+            
+            <div class="polar_modal-footer">
+                <button class="polar_btn" onclick="window.polarModuleInstance.closeConnectionModal()">
+                    <i class="fas fa-times"></i>
+                    Annuler
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="polar_toast-container" id="polar_toastContainer"></div>
+
+    <!-- Loading Overlay -->
+    <div class="polar_loading-overlay" id="polar_loadingOverlay">
+        <div class="polar_loading-content">
+            <div class="polar_loading-spinner">
+                <div class="polar_spinner-heart">
+                    <i class="fas fa-heart"></i>
+                </div>
+            </div>
+            <h3 class="polar_loading-title" id="polar_loadingTitle">Recherche des appareils...</h3>
+            <p class="polar_loading-text" id="polar_loadingText">Scan en cours</p>
+            <div class="polar_loading-progress">
+                <div class="polar_progress-bar" id="polar_progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de téléchargement CSV -->
+    <div class="polar_download-modal" id="polar_downloadModal">
+        <div class="polar_download-modal-content">
+            <div class="polar_download-modal-header">
+                <h3>
+                    <i class="fas fa-download"></i>
+                    Télécharger les fichiers CSV
+                </h3>
+                <button class="polar_close-download-modal" id="polar_closeDownloadModalBtn" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="polar_download-modal-body">
+                <div id="polar_downloadLoadingState">
+                    <div class="polar_text-center polar_p-4">
+                        <i class="fas fa-spinner fa-spin polar_text-2xl polar_text-gray-500 polar_mb-3"></i>
+                        <p class="polar_text-gray-500">Chargement des fichiers...</p>
+                    </div>
+                </div>
+                
+                <div id="polar_downloadFilesState" style="display: none;">
+                    <div class="polar_files-list" id="polar_filesList">
+                        <!-- Les fichiers seront ajoutés dynamiquement -->
+                    </div>
+                    
+                    <div class="polar_mt-4 polar_text-center">
+                        <button class="polar_btn polar_btn-primary" id="polar_downloadAllBtn" type="button">
+                            <i class="fas fa-archive"></i>
+                            Télécharger tout (ZIP)
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="polar_downloadEmptyState" style="display: none;">
+                    <div class="polar_text-center polar_p-4">
+                        <i class="fas fa-folder-open polar_text-3xl polar_text-gray-400 polar_mb-3"></i>
+                        <p>Aucun fichier CSV disponible</p>
+                        <p class="polar_text-sm polar_text-gray-500 polar_mt-2">
+                            Démarrez un enregistrement pour créer des fichiers CSV.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- Template pour les options d'appareils -->
+<template id="polar_deviceCardTemplate">
+    <div class="polar_device-option" data-device-id="" data-device-type="">
+        <div class="polar_device-option-info">
+            <div class="polar_device-option-icon">
+                <i class="fas fa-bluetooth"></i>
+            </div>
+            <div class="polar_device-option-details">
+                <h4 class="polar_device-name"></h4>
+                <p>
+                    <span class="polar_device-id"></span>
+                    •
+                    <span class="polar_device-signal"></span>
+                </p>
+            </div>
+        </div>
+        <button class="polar_connect-btn">
+            <i class="fas fa-link"></i>
+            <span>Connecter</span>
+        </button>
+    </div>
+</template>

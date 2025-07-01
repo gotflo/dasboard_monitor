@@ -23,7 +23,7 @@ class ModuleRegistry:
             'dashboard': {
                 'name': 'Dashboard Principal',
                 'description': 'Centre de contrôle principal',
-                'icon': 'fas fa-home',
+                'icon': 'fas fa-dashboard_home',
                 'enabled': True,
                 'status': 'active',
                 'version': '1.0.0',
@@ -62,10 +62,10 @@ class ModuleRegistry:
                 },
                 'created_at': datetime.now().isoformat()
             },
-            'eeg_crown': {
-                'name': 'EEG Crown',
-                'subtitle': 'Neurosity',
-                'description': 'Interface EEG et monitoring cérébral avancé',
+            'neurosity': {
+                'name': 'Neurosity Crown',
+                'subtitle': 'EEG Monitor',
+                'description': 'Interface cerveau-ordinateur avec monitoring EEG en temps réel',
                 'icon': 'fas fa-brain',
                 'color': '#4ecdc4',
                 'badge': 'EEG',
@@ -73,23 +73,40 @@ class ModuleRegistry:
                 'status': 'ready',
                 'version': '1.0.0',
                 'category': 'sensor',
-                'dependencies': ['neurosity_sdk'],
+                'dependencies': ['neurosity_sdk', 'multiprocessing'],
                 'features': [
-                    'Ondes cérébrales en temps réel',
-                    'États de concentration',
-                    'Méditation assistée',
-                    'Interface BCI'
+                    'Monitoring calme et concentration',
+                    'Ondes cérébrales (Delta, Theta, Alpha, Beta, Gamma)',
+                    'Signal EEG brut 8 canaux',
+                    'Qualité du signal par électrode',
+                    'Enregistrement CSV des sessions',
+                    'Export et analyse des données'
                 ],
                 'websocket_events': [
+                    'connect',
+                    'disconnect',
+                    'start_monitoring',
+                    'stop_monitoring',
                     'start_recording',
                     'stop_recording',
-                    'get_brain_waves'
+                    'get_sessions'
                 ],
                 'config': {
                     'channels': 8,
                     'sample_rate': 256,
-                    'device_name': 'Crown'
+                    'electrodes': ['CP3', 'C3', 'F5', 'PO3', 'PO4', 'F6', 'C4', 'CP4'],
+                    'device_name': 'Crown',
+                    'data_types': ['calm', 'focus', 'brainwaves', 'raw_eeg'],
+                    'recording_format': 'csv',
+                    'auto_connect': False,
+                    'auto_start_monitoring': True
                 },
+                'api_routes': [
+                    {'path': '/api/neurosity/status', 'method': 'GET'},
+                    {'path': '/api/neurosity/sessions', 'method': 'GET'},
+                    {'path': '/api/neurosity/download/<filename>', 'method': 'GET'},
+                    {'path': '/api/neurosity/analyze/<filename>', 'method': 'GET'}
+                ],
                 'created_at': datetime.now().isoformat()
             },
             'thermal_camera': {

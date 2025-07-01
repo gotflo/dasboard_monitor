@@ -12,7 +12,7 @@ class Dashboard {
         this.loadedScripts = new Set();
         this.moduleInstances = new Map();
         this.devMode = this.isDevMode();
-        this.persistentModules = new Set(['thermal_camera', 'thought_capture']);
+        this.persistentModules = new Set(['thermal_camera', 'thought_capture', 'neurosity', 'polar']);
         this.hiddenContainer = null;
         this.persistentScriptsLoaded = new Set();
 
@@ -28,7 +28,7 @@ class Dashboard {
 
     async init() {
         try {
-            console.log('Initialisation Dashboard BioMedical Hub...');
+            console.log('Initialisation Dashboard...');
 
             if (this.devMode) {
                 console.log('MODE DÉVELOPPEMENT: Cache désactivé');
@@ -56,9 +56,11 @@ class Dashboard {
     getAvailableModules() {
         return {
             'dashboard': {
-                name: 'BioMedical Hub',
+                name: "Vue d'ensemble",
                 subtitle: 'Monitoring unifié & Collecte de données',
-                template: '/static/templates/modules/dashboard.html'
+                template: '/static/templates/modules/dashboard_home.html',
+                script: '/static/templates/modules/dashboard_home.js',
+                style: '/static/templates/modules/dashboard_home.css'
             },
             'polar': {
                 name: 'Polar Monitor',
@@ -67,7 +69,7 @@ class Dashboard {
                 script: '/static/js/modules/polar.js',
                 style: '/static/css/modules/polar.css'
             },
-            'eeg_crown': {
+            'neurosity': {
                 name: 'EEG Crown',
                 subtitle: 'Neurosity',
                 template: '/static/templates/modules/neurosity.html',
@@ -358,8 +360,9 @@ class Dashboard {
     initializeModule(moduleName) {
         const initFunctions = {
             'thought_capture': 'initThoughtCaptureModule',
+            'dashboard': 'initDashboardHome',
             'polar': 'initPolarModule',
-            'eeg_crown': 'initEEGModule',
+            'neurosity': 'initNeurosityModule',
             'thermal_camera': 'initThermalModule',
             'gazepoint': 'initGazepointModule'
         };
@@ -543,7 +546,7 @@ class Dashboard {
         const moduleEvents = {
             'dashboard': ['dashboard', 'request_dashboard_data', {}],
             'polar': ['polar', 'get_hrv_data', {}],
-            'eeg_crown': ['eeg_crown', 'get_brain_waves', {}],
+            'neurosity': ['neurosity', 'get_neurosity_status', {}],
             'thermal_camera': ['thermal_camera', 'get_temperature_map', {}],
             'gazepoint': ['gazepoint', 'get_gaze_data', {}],
             'thought_capture': ['thought_capture', 'decode_intention', {}]
@@ -581,11 +584,11 @@ class Dashboard {
         const devModeText = this.devMode ? ' (Dev)' : '';
 
         if (connected) {
-            statusIndicator.innerHTML = `<i class="fas fa-circle" style="color: #10b981;"></i> WebSocket Connecté${devModeText}`;
+            statusIndicator.innerHTML = `<i class="fas fa-circle" style="color: #10b981;"></i> WebSocket Connecté`;
             statusIndicator.style.background = '#dcfce7';
             statusIndicator.style.color = '#166534';
         } else {
-            statusIndicator.innerHTML = `<i class="fas fa-circle" style="color: #ef4444;"></i> WebSocket Déconnecté${devModeText}`;
+            statusIndicator.innerHTML = `<i class="fas fa-circle" style="color: #ef4444;"></i> WebSocket Déconnecté`;
             statusIndicator.style.background = '#fef2f2';
             statusIndicator.style.color = '#991b1b';
         }

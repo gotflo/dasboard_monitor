@@ -1,0 +1,1792 @@
+/* ===============================================
+   MODULE POLAR - STYLES INTÉGRÉS AU DASHBOARD
+   Version harmonisée avec préfixes polar_
+   =============================================== */
+
+/* Variables CSS alignées avec le dashboard */
+:root {
+    /* Palette soft moderne */
+    --primary-soft: #667eea;
+    --primary-light: #818cf8;
+    --secondary-soft: #f472b6;
+    --success-soft: #34d399;
+    --warning-soft: #fbbf24;
+    --danger-soft: #f87171;
+    
+    /* Arrière-plans soft */
+    --bg-primary: #fafbff;
+    --bg-secondary: #f8fafc;
+    --bg-glass: rgba(255, 255, 255, 0.8);
+    --bg-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    
+    /* Ombres soft améliorées */
+    --shadow-soft: 0 4px 20px rgba(100, 116, 139, 0.08);
+    --shadow-hover: 0 8px 30px rgba(100, 116, 139, 0.12);
+    --shadow-focus: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    --shadow-solo: 0 16px 50px rgba(100, 116, 139, 0.15);
+    
+    /* Typography moderne */
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    
+    /* Espacements agrandis */
+    --spacing-xs: 0.375rem;
+    --spacing-sm: 0.625rem;
+    --spacing-md: 0.875rem;
+    --spacing-lg: 1.25rem;
+    --spacing-xl: 1.875rem;
+    --spacing-xxl: 2.5rem;
+    
+    /* Border radius moderne */
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 22px;
+    
+    /* Transitions fluides */
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Variables existantes adaptées */
+    --primary-color: #e74c3c;
+    --primary-dark: #c0392b;
+    --secondary-color: #667eea;
+    --secondary-light: #a8b8ff;
+    --accent-color: #e84393;
+    
+    /* Couleurs pour appareils */
+    --h10-gradient: linear-gradient(135deg, #f87171 0%, #f472b6 100%);
+    --verity-gradient: linear-gradient(135deg, #667eea 0%, #818cf8 100%);
+    
+    /* Layout amélioré */
+    --layout-transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    --card-transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Variables pour le cœur rouge centré */
+    --heart-color-h10: #dc2626;
+    --heart-color-verity: #dc2626;
+    --heart-glow: 0 0 20px rgba(220, 38, 38, 0.6);
+    
+    /* Bordures */
+    --border-color: #e5e7eb;
+}
+
+/* Container principal du module */
+.polar_module-container {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  font-family: var(--font-primary);
+  padding: var(--spacing-xl);
+}
+
+/* ===============================================
+   HEADER DU MODULE
+   =============================================== */
+
+.polar_module-header {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--spacing-xl) var(--spacing-xxl);
+  margin: calc(var(--spacing-xl) * -1) calc(var(--spacing-xl) * -1) var(--spacing-xl);
+  box-shadow: var(--shadow-soft);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.polar_header-content {
+  max-width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+}
+
+.polar_header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.polar_title-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--h10-gradient);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.375rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.polar_title-text h2 {
+  font-size: 1.625rem;
+  font-weight: var(--font-weight-semibold);
+  color: #1e293b;
+  margin: 0;
+  font-family: var(--font-primary);
+}
+
+.polar_title-text p {
+  font-size: 0.9375rem;
+  color: #64748b;
+  margin: 0;
+  margin-top: var(--spacing-xs);
+  font-family: var(--font-primary);
+}
+
+/* ===============================================
+   CONTRÔLES
+   =============================================== */
+
+.polar_controls-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.polar_devices-counter {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  font-size: 0.875rem;
+  color: #1e293b;
+  font-weight: var(--font-weight-medium);
+  border: 1px solid var(--border-color);
+}
+
+.polar_devices-counter i {
+  color: var(--primary-soft);
+}
+
+.polar_btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-family: var(--font-primary);
+  box-shadow: var(--shadow-soft);
+}
+
+.polar_btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.polar_btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.polar_btn-primary {
+  background: linear-gradient(135deg, var(--primary-soft) 0%, var(--primary-light) 100%);
+  color: white;
+}
+
+.polar_btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b7fff 100%);
+}
+
+.polar_btn-danger {
+  background: var(--danger-soft);
+  color: white;
+}
+
+/* ===============================================
+   GRILLE DE MONITORING
+   =============================================== */
+
+.polar_monitoring-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mode single device */
+.polar_monitoring-grid.polar_single-device {
+  max-width: 800px;
+  margin: 0 auto var(--spacing-xl);
+}
+
+/* Masquer complètement les cartes inactives en mode single */
+.polar_monitoring-grid.polar_single-device .polar_device-card.polar_inactive {
+  display: none !important;
+}
+
+/* Animation fluide pour la carte active en mode single */
+.polar_monitoring-grid.polar_single-device .polar_device-card.polar_active {
+  animation: polar_expandToSingle 0.4s ease forwards;
+}
+
+@keyframes polar_expandToSingle {
+  from {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Transition fluide lors du retour en mode dual */
+.polar_monitoring-grid:not(.polar_single-device) .polar_device-card {
+  animation: polar_fadeInCard 0.4s ease forwards;
+}
+
+@keyframes polar_fadeInCard {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ===============================================
+   CARTES D'APPAREILS
+   =============================================== */
+
+.polar_device-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  transition: var(--card-transition);
+}
+
+.polar_device-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.polar_device-card.polar_inactive {
+  opacity: 0.6;
+  filter: grayscale(20%);
+  transition: all 0.3s ease;
+}
+
+/* Animation pour le masquage/affichage des cartes */
+.polar_monitoring-grid.polar_single-device .polar_device-card {
+  transition: opacity 0.3s ease, transform 0.3s ease, display 0s 0.3s;
+}
+
+.polar_monitoring-grid.polar_single-device .polar_device-card.polar_active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Animation des cartes inactives lors du retour en mode dual */
+.polar_monitoring-grid:not(.polar_single-device) .polar_device-card.polar_inactive {
+  animation: polar_fadeInInactive 0.5s ease forwards;
+}
+
+@keyframes polar_fadeInInactive {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+}
+
+/* En-tête de carte */
+.polar_device-header {
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.polar_device-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.polar_device-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.25rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.polar_h10-card .polar_device-icon {
+  background: var(--h10-gradient);
+}
+
+.polar_verity-card .polar_device-icon {
+  background: var(--verity-gradient);
+}
+
+.polar_device-details h3 {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-semibold);
+  color: #1e293b;
+  margin: 0 0 var(--spacing-xs);
+  font-family: var(--font-primary);
+}
+
+.polar_device-id {
+  font-family: 'SF Mono', 'Monaco', monospace;
+  font-size: 0.75rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Statut de connexion */
+.polar_device-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.polar_status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e5e7eb;
+}
+
+.polar_status-dot.polar_connected {
+  background: var(--success-soft);
+  animation: polar_pulse 2s infinite;
+}
+
+@keyframes polar_pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Contenu de la carte */
+.polar_device-content {
+  padding: var(--spacing-xl);
+}
+
+/* Section cœur */
+.polar_heart-section {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--spacing-xl);
+  align-items: center;
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-xl);
+  border: 1px solid var(--border-color);
+}
+
+.polar_heart-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+}
+
+.polar_heart-icon {
+  font-size: 2rem;
+  color: var(--heart-color-h10);
+  text-shadow: var(--heart-glow);
+  animation: polar_heartbeat 1s ease-in-out infinite;
+}
+
+@keyframes polar_heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.polar_heart-rate-values {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.polar_bpm-value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+}
+
+.polar_bpm-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+  font-family: var(--font-primary);
+}
+
+.polar_bpm-unit {
+  font-size: 1rem;
+  color: #64748b;
+  font-weight: var(--font-weight-medium);
+}
+
+.polar_heart-zone-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: #e0f2fe;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: #0369a1;
+  font-weight: var(--font-weight-medium);
+}
+
+/* Métriques temps réel */
+.polar_real-time-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.polar_metrics-group {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.polar_metrics-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-semibold);
+  color: #475569;
+}
+
+.polar_metrics-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.polar_metric-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+}
+
+.polar_metric-label {
+  color: #64748b;
+}
+
+.polar_metric-value {
+  font-weight: var(--font-weight-semibold);
+  color: #1e293b;
+  font-family: var(--font-primary);
+}
+
+.polar_metric-unit {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-left: 2px;
+}
+
+/* Graphique */
+.polar_chart-container {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  position: relative;
+  min-height: 200px;
+  box-shadow: var(--shadow-soft);
+}
+
+.polar_chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.polar_chart-header h4 {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-semibold);
+  color: #1e293b;
+  margin: 0;
+  font-family: var(--font-primary);
+}
+
+.polar_chart-controls {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.polar_chart-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-color);
+  background: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.polar_chart-btn:hover {
+  background: var(--primary-soft);
+  color: white;
+  border-color: var(--primary-soft);
+}
+
+.polar_chart-canvas {
+  height: 150px;
+  position: relative;
+}
+
+.polar_chart-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-glass);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--transition-normal);
+  border-radius: 8px;
+}
+
+.polar_chart-overlay.polar_active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===============================================
+   PANNEAU DE COMPARAISON
+   =============================================== */
+
+.polar_comparison-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border-color);
+  padding: var(--spacing-xl);
+  margin-top: var(--spacing-xl);
+}
+
+.polar_comparison-panel.polar_single-mode {
+  display: none;
+}
+
+.polar_section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.polar_section-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--primary-soft) 0%, var(--primary-light) 100%);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.25rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.polar_section-title h3 {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-semibold);
+  color: #1e293b;
+  margin: 0 0 var(--spacing-xs);
+  font-family: var(--font-primary);
+}
+
+.polar_section-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.polar_comparison-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.polar_comparison-metric {
+  text-align: center;
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.polar_comparison-metric h4 {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  color: #64748b;
+  margin-bottom: var(--spacing-sm);
+  font-family: var(--font-primary);
+}
+
+.polar_comparison-metric .polar_metric-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* ===============================================
+   MODAL DE CONNEXION - VERSION MODERNE & SOFT
+   =============================================== */
+
+.polar_connection-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition-normal);
+}
+
+.polar_connection-modal.polar_active {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+}
+
+.polar_modal-content {
+    background: var(--bg-card);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-solo);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    max-width: 500px;
+    width: 90%;
+    max-height: 75vh;
+    overflow: hidden;
+    transform: scale(0.9) translateY(20px);
+    transition: var(--card-transition);
+}
+
+.polar_connection-modal.polar_active .polar_modal-content {
+    transform: scale(1) translateY(0);
+}
+
+.polar_modal-header {
+    background: linear-gradient(135deg, var(--primary-soft) 0%, var(--primary-light) 100%);
+    color: white;
+    padding: var(--spacing-xl);
+    text-align: center;
+    position: relative;
+}
+
+.polar_modal-header h3 {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-primary);
+    margin: 0 0 var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+}
+
+.polar_modal-header h3 i {
+    font-size: 1.625rem;
+}
+
+.polar_modal-header .polar_subtitle {
+    font-size: 0.9375rem;
+    opacity: 0.9;
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-primary);
+}
+
+.polar_modal-close {
+    position: absolute;
+    top: var(--spacing-lg);
+    right: var(--spacing-lg);
+    background: var(--bg-glass);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-soft);
+    cursor: pointer;
+    transition: var(--transition-normal);
+    font-size: 1rem;
+    box-shadow: var(--shadow-soft);
+}
+
+.polar_modal-close:hover {
+    background: white;
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: var(--shadow-hover);
+}
+
+.polar_modal-body {
+    padding: var(--spacing-xl);
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-soft) var(--bg-secondary);
+}
+
+.polar_modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.polar_modal-body::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+}
+
+.polar_modal-body::-webkit-scrollbar-thumb {
+    background: var(--primary-soft);
+    border-radius: 3px;
+}
+
+.polar_modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-light);
+}
+
+.polar_device-option {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(102, 126, 234, 0.1);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: var(--transition-normal);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+}
+
+.polar_device-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.08), transparent);
+    transition: var(--transition-slow);
+}
+
+.polar_device-option:hover::before {
+    left: 100%;
+}
+
+.polar_device-option:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--primary-soft);
+}
+
+.polar_device-option-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    flex: 1;
+}
+
+.polar_device-option-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+}
+
+/* Icônes spécifiques par type d'appareil */
+.polar_device-option[data-device-type="h10"] .polar_device-option-icon {
+    background: var(--h10-gradient);
+}
+
+.polar_device-option[data-device-type="verity"] .polar_device-option-icon {
+    background: var(--verity-gradient);
+}
+
+.polar_device-option-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transition: var(--transition-normal);
+}
+
+.polar_device-option:hover .polar_device-option-icon::after {
+    width: 100%;
+    height: 100%;
+}
+
+.polar_device-option-details h4 {
+    font-size: 1.125rem;
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-primary);
+    color: #1e293b;
+    margin: 0 0 var(--spacing-xs);
+}
+
+.polar_device-option-details p {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin: 0;
+    font-family: var(--font-primary);
+}
+
+.polar_device-option-details p span {
+    margin: 0 var(--spacing-xs);
+}
+
+.polar_connect-btn {
+    background: linear-gradient(135deg, var(--primary-soft) 0%, var(--primary-light) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+}
+
+.polar_connect-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    transition: var(--transition-slow);
+}
+
+.polar_connect-btn:hover::before {
+    transform: translate(-50%, -50%) scale(1.5);
+}
+
+.polar_connect-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.polar_connect-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+}
+
+.polar_connect-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    background: #94a3b8;
+}
+
+.polar_connect-btn.polar_connecting {
+    pointer-events: none;
+}
+
+.polar_connect-btn.polar_connecting span {
+    display: none;
+}
+
+.polar_connect-btn.polar_connecting::after {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid white;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: polar_spin 0.8s linear infinite;
+}
+
+.polar_modal-footer {
+    padding: var(--spacing-lg);
+    border-top: 1px solid rgba(226, 232, 240, 0.5);
+    text-align: center;
+    background: var(--bg-secondary);
+}
+
+/* État vide */
+.polar_no-devices {
+    text-align: center;
+    padding: var(--spacing-xxl) var(--spacing-xl);
+    animation: polar_fadeIn 0.5s ease;
+}
+
+.polar_no-devices-icon {
+    font-size: 4rem;
+    color: var(--primary-soft);
+    margin-bottom: var(--spacing-lg);
+    animation: polar_pulse 2s ease-in-out infinite;
+    opacity: 0.5;
+}
+
+.polar_no-devices h4 {
+    font-size: 1.375rem;
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-primary);
+    color: #1e293b;
+    margin: 0 0 var(--spacing-sm);
+}
+
+.polar_no-devices p {
+    font-size: 1rem;
+    color: #64748b;
+    margin: 0 0 var(--spacing-xl);
+    font-family: var(--font-primary);
+}
+
+/* Animation de chargement des appareils */
+.polar_device-option {
+    animation: polar_slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.polar_device-option:nth-child(1) { animation-delay: 0.1s; }
+.polar_device-option:nth-child(2) { animation-delay: 0.15s; }
+.polar_device-option:nth-child(3) { animation-delay: 0.2s; }
+.polar_device-option:nth-child(4) { animation-delay: 0.25s; }
+
+@keyframes polar_slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* États de connexion */
+.polar_device-option.polar_connecting {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.polar_device-option.polar_connected {
+    background: linear-gradient(145deg, #d1fae5 0%, #ecfccb 100%);
+    border-color: var(--success-soft);
+}
+
+.polar_device-option.polar_connected .polar_connect-btn {
+    background: var(--success-soft);
+}
+
+.polar_device-option.polar_connected .polar_connect-btn span {
+    display: none;
+}
+
+.polar_device-option.polar_connected .polar_connect-btn::after {
+    content: '✓ Connecté';
+    color: white;
+    font-weight: var(--font-weight-semibold);
+    animation: none;
+}
+
+/* ===============================================
+   CONTRÔLES CSV
+   =============================================== */
+
+.polar_csv-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.polar_csv-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.8125rem;
+  color: #1e293b;
+  font-weight: var(--font-weight-medium);
+}
+
+.polar_csv-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6b7280;
+}
+
+.polar_csv-status-dot.polar_idle {
+  background: var(--success-soft);
+}
+
+.polar_csv-status-dot.polar_recording {
+  background: var(--danger-soft);
+  animation: polar_blink 1s infinite;
+}
+
+@keyframes polar_blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+/* ===============================================
+   TOAST NOTIFICATIONS
+   =============================================== */
+
+.polar_toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  max-width: 400px;
+}
+
+.polar_toast {
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-hover);
+  border: 1px solid var(--border-color);
+  padding: var(--spacing-lg);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  animation: polar_slideIn 0.3s ease;
+}
+
+@keyframes polar_slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.polar_toast-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.875rem;
+}
+
+.polar_toast.polar_success .polar_toast-icon {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.polar_toast.polar_error .polar_toast-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.polar_toast-content {
+  flex: 1;
+}
+
+.polar_toast-title {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-semibold);
+  color: #1e293b;
+  margin-bottom: var(--spacing-xs);
+  font-family: var(--font-primary);
+}
+
+.polar_toast-message {
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+/* ===============================================
+   LOADING OVERLAY
+   =============================================== */
+
+.polar_loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--transition-normal);
+}
+
+.polar_loading-overlay.polar_active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.polar_loading-content {
+  text-align: center;
+  padding: var(--spacing-xxl);
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-solo);
+  max-width: 300px;
+}
+
+.polar_loading-spinner {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto var(--spacing-xl);
+  position: relative;
+}
+
+.polar_spinner-heart {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--primary-soft) 0%, var(--primary-light) 100%);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  animation: polar_heartPulse 2s ease-in-out infinite;
+}
+
+@keyframes polar_heartPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@keyframes polar_spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ===============================================
+   MODAL DE TÉLÉCHARGEMENT CSV
+   =============================================== */
+
+.polar_download-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.polar_download-modal.polar_active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.polar_download-modal-content {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.polar_download-modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.polar_download-modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.polar_download-modal-header h3 i {
+    color: #667eea;
+}
+
+.polar_close-download-modal {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.5rem;
+    font-size: 1.25rem;
+    transition: all 0.2s;
+    border-radius: 8px;
+}
+
+.polar_close-download-modal:hover {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.polar_download-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.polar_download-modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.polar_download-modal-body::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.polar_download-modal-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+/* États de chargement */
+#polar_downloadLoadingState,
+#polar_downloadEmptyState {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.polar_text-center {
+    text-align: center;
+}
+
+.polar_p-4 {
+    padding: 1rem;
+}
+
+.polar_text-2xl {
+    font-size: 1.5rem;
+}
+
+.polar_text-3xl {
+    font-size: 1.875rem;
+}
+
+.polar_text-gray-400 {
+    color: #9ca3af;
+}
+
+.polar_text-gray-500 {
+    color: #6b7280;
+}
+
+.polar_mb-3 {
+    margin-bottom: 0.75rem;
+}
+
+.polar_mt-2 {
+    margin-top: 0.5rem;
+}
+
+.polar_mt-4 {
+    margin-top: 1rem;
+}
+
+.polar_text-sm {
+    font-size: 0.875rem;
+}
+
+/* Liste des fichiers */
+.polar_files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.polar_file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.polar_file-item:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.polar_file-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.polar_file-icon {
+    width: 40px;
+    height: 40px;
+    background: #e0e7ff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #667eea;
+    font-size: 1.25rem;
+}
+
+.polar_file-details {
+    flex: 1;
+}
+
+.polar_file-name {
+    font-weight: 500;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+}
+
+.polar_file-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.polar_file-download-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.polar_file-download-btn:hover {
+    background: #5a67d8;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+/* Bouton télécharger tout */
+#polar_downloadAllBtn {
+    background: linear-gradient(135deg, #667eea 0%, #818cf8 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+#polar_downloadAllBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Styles pour les métriques de qualité */
+.polar_metric-value.quality-excellent {
+    color: #059669;
+}
+
+.polar_metric-value.quality-good {
+    color: #3b82f6;
+}
+
+.polar_metric-value.quality-fair {
+    color: #f59e0b;
+}
+
+.polar_metric-value.quality-poor {
+    color: #ef4444;
+}
+
+.polar_metric-value.quality-unknown {
+    color: #6b7280;
+}
+
+/* Animation pour la mise à jour des métriques */
+.polar_updating {
+    animation: polar_metricUpdate 0.3s ease-out;
+}
+
+/* Icône de cœur qui bat */
+.polar_beating {
+    animation: polar_heartbeat 0.6s ease-out;
+}
+
+/* Mode single device */
+.polar_monitoring-grid.polar_single-device .polar_beating {
+    animation: polar_heartbeat-solo 0.7s ease-out;
+}
+
+/* Panneau de comparaison en mode single */
+.polar_comparison-panel.polar_single-mode {
+    display: none;
+}
+
+/* États des cartes */
+.polar_device-card.polar_active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Overlay des graphiques */
+.polar_chart-overlay-icon {
+    font-size: 2rem;
+    color: #94a3b8;
+    animation: polar_pulse 2s ease-in-out infinite;
+}
+
+.polar_chart-overlay-text {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+/* Statut d'enregistrement */
+.polar_btn-record.polar_recording {
+    background: #ef4444;
+    animation: polar_recordPulse 1s ease-in-out infinite;
+}
+
+@keyframes polar_recordPulse {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+    }
+}
+
+/* Session info */
+.polar_csv-session-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #dc2626;
+}
+
+#polar_sessionDuration {
+    font-family: 'SF Mono', 'Monaco', monospace;
+}
+
+/* ===============================================
+   RESPONSIVE
+   =============================================== */
+
+@media (max-width: 1024px) {
+  .polar_monitoring-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .polar_comparison-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .polar_module-header {
+    padding: var(--spacing-lg);
+  }
+  
+  .polar_header-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .polar_real-time-metrics {
+    grid-template-columns: 1fr;
+  }
+  
+  .polar_heart-section {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .polar_heart-display {
+    margin: 0 auto;
+  }
+  
+  .polar_device-header {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .polar_module-container {
+    padding: var(--spacing-md);
+  }
+  
+  .polar_btn span {
+    display: none;
+  }
+  
+  .polar_csv-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+/* Responsive modal */
+@media (max-width: 640px) {
+    .polar_modal-content {
+        max-width: 95%;
+        max-height: 85vh;
+        border-radius: var(--radius-lg);
+    }
+    
+    .polar_modal-header {
+        padding: var(--spacing-lg);
+    }
+    
+    .polar_modal-body {
+        padding: var(--spacing-lg);
+    }
+    
+    .polar_device-option {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        text-align: center;
+    }
+    
+    .polar_device-option-info {
+        flex-direction: column;
+    }
+    
+    .polar_connect-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ===============================================
+   UTILITAIRES
+   =============================================== */
+
+.polar_hidden {
+  display: none !important;
+}
+
+.polar_text-center {
+  text-align: center;
+}
+
+.polar_mt-1 { margin-top: var(--spacing-xs); }
+.polar_mt-2 { margin-top: var(--spacing-sm); }
+.polar_mt-3 { margin-top: var(--spacing-md); }
+.polar_mt-4 { margin-top: var(--spacing-lg); }
+
+.polar_mb-1 { margin-bottom: var(--spacing-xs); }
+.polar_mb-2 { margin-bottom: var(--spacing-sm); }
+.polar_mb-3 { margin-bottom: var(--spacing-md); }
+.polar_mb-4 { margin-bottom: var(--spacing-lg); }
+
+/* ===============================================
+   ANIMATIONS SUPPLÉMENTAIRES
+   =============================================== */
+
+@keyframes polar_fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes polar_metricUpdate {
+  0% {
+    transform: scale(1);
+    color: inherit;
+  }
+  50% {
+    transform: scale(1.05);
+    color: var(--primary-soft);
+  }
+  100% {
+    transform: scale(1);
+    color: inherit;
+  }
+}
+
+@keyframes polar_heartbeat-solo {
+  0% {
+    transform: scale(1);
+    text-shadow: 0 0 20px rgba(220, 38, 38, 0.8);
+  }
+  25% {
+    transform: scale(1.25);
+    text-shadow: 0 0 30px rgba(220, 38, 38, 1);
+  }
+  50% {
+    transform: scale(1.1);
+    text-shadow: 0 0 25px rgba(220, 38, 38, 0.9);
+  }
+  75% {
+    transform: scale(1.2);
+    text-shadow: 0 0 28px rgba(220, 38, 38, 0.95);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 20px rgba(220, 38, 38, 0.8);
+  }
+}
+
+.polar_device-card {
+  animation: polar_fadeIn 0.5s ease;
+}
+
+.polar_device-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+/* Focus pour accessibilité */
+.polar_btn:focus,
+.polar_chart-btn:focus,
+.polar_connect-btn:focus {
+  outline: 2px solid var(--primary-soft);
+  outline-offset: 2px;
+}
+
+/* Préférence mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Support du mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

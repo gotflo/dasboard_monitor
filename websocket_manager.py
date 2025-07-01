@@ -2,6 +2,7 @@
 """
 WebSocket Manager - BioMedical Hub
 Gestionnaire centralisé pour toutes les communications WebSocket
+Version corrigée pour Flask-SocketIO
 """
 
 from flask_socketio import SocketIO, emit, join_room, leave_room
@@ -137,8 +138,13 @@ class WebSocketManager:
         logger.info(f"Événement {event} émis au module {module_name}")
     
     def broadcast(self, event, data):
-        """Diffuser un événement à tous les clients connectés"""
-        self.socketio.emit(event, data, broadcast=True)
+        """Diffuser un événement à tous les clients connectés
+
+        CORRECTION: En Flask-SocketIO, pas besoin du paramètre broadcast=True.
+        Quand on appelle emit() sans spécifier de room/to, ça broadcast automatiquement.
+        """
+        # Émettre à tous les clients connectés (broadcast par défaut sans room spécifiée)
+        self.socketio.emit(event, data)
         logger.info(f"Événement {event} diffusé à tous les clients")
     
     def get_module_clients(self, module_name):

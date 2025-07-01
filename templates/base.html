@@ -18,25 +18,28 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/modules/neurosity.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/modules/thought_capture.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/modules/thermal_camera.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modules/neurosity.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modules/polar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modules/polar_animations.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modules/dashboard_home.css') }}">
 </head>
 <body>
     <div class="app-container">
         <!-- Sidebar -->
         <nav class="sidebar">
             <div class="sidebar-header">
-                <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
-                <p>Monitoring unifié/collecte de données</p>
+                <p>Monitoring/collecte de données</p>
             </div>
             
             <div class="sidebar-nav">
-                <div class="nav-section">
-                    <div class="nav-section-title">Navigation</div>
-                    <div class="nav-item">
-                        <a href="#" class="nav-link active" data-module="dashboard">
-                            <i class="nav-icon fas fa-home"></i>
-                            <span class="nav-text">Accueil</span>
-                        </a>
-                    </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link" data-module="dashboard">
+                        <i class="nav-icon fas fa-th-large" style="color: #667eea;"></i>
+                        <div class="nav-text">
+                            <div>Vue d'ensemble</div>
+                            <div class="nav-subtitle">Monitoring global</div>
+                        </div>
+                    </a>
                 </div>
                 
                 <div class="nav-section">
@@ -54,7 +57,7 @@
                     </div>
                     
                     <div class="nav-item">
-                        <a href="#" class="nav-link" data-module="eeg_crown">
+                        <a href="#" class="nav-link" data-module="neurosity">
                             <i class="nav-icon fas fa-brain" style="color: #4ecdc4;"></i>
                             <div class="nav-text">
                                 <div>EEG Crown</div>
@@ -123,6 +126,8 @@
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modules/thought_capture.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modules/thermal_camera.js') }}"></script>
-<!--    <script src="{{ url_for('static', filename='js/modules/neurosity.js') }}"></script>-->
+    <script src="{{ url_for('static', filename='js/modules/dashboard_home.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modules/polar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modules/neurosity.js') }}"></script>
 </body>
 </html>
