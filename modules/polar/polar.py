@@ -2,6 +2,7 @@
 """
 Module Polar - Backend pour capteurs cardiaques Polar H10 et Verity Sense
 Gestion des connexions Bluetooth et collecte de données en temps réel
+Version optimisée avec CSV une ligne par intervalle RR
 """
 
 import asyncio
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class PolarModule:
-    """Module principal pour la gestion des appareils Polar"""
+    """Module principal pour la gestion des appareils Polar avec CSV optimisé"""
     
     def __init__(self, app, websocket_manager):
         self.app = app
@@ -38,23 +39,31 @@ class PolarModule:
             'verity': None
         }
         
-        # Configuration CSV
-        self.csv_writer = None
-        self.csv_file = None
+        # Configuration CSV - Un writer par appareil
+        self.csv_writers = {
+            'h10': None,
+            'verity': None
+        }
+        self.csv_files = {
+            'h10': None,
+            'verity': None
+        }
         self.csv_recording = False
         self.csv_session_start = None
-        self.csv_data_buffer = {
-            'h10': {},
-            'verity': {}
+        self.csv_lines_written = {
+            'h10': 0,
+            'verity': 0
         }
         
         # Configuration du module
         self.config = {
             'csv_directory': Path('recordings/polar'),
-            'csv_delimiter': ';',
+            'csv_delimiter': ';',  # Point-virgule comme délimiteur
+            'csv_decimal': '.',  # Point comme séparateur décimal
             'buffer_size': 100,
             'reconnect_attempts': 3,
-            'connection_timeout': 30
+            'connection_timeout': 30,
+            'write_empty_intervals': True  # Écrire les lignes même sans RR
         }
         
         # Créer le dossier pour les enregistrements
@@ -65,10 +74,18 @@ class PolarModule:
             'start_time': None,
             'devices_connected': 0,
             'data_points_collected': 0,
-            'csv_lines_written': 0
+            'total_rr_intervals': 0,
+            'total_hr_samples': 0
         }
         
-        logger.info("Module Polar initialisé")
+        # Buffers pour optimisation écriture
+        self.write_buffers = {
+            'h10': [],
+            'verity': []
+        }
+        self.max_buffer_size = 50  # Flush tous les 50 enregistrements
+        
+        logger.info("Module Polar initialisé avec CSV optimisé (une ligne par RR)")
     
     async def scan_for_devices(self, timeout: int = 10) -> List[Dict[str, Any]]:
         """Scan pour trouver les appareils Polar disponibles"""
@@ -77,13 +94,11 @@ class PolarModule:
             
             # Vérifier si le Bluetooth est disponible
             try:
-                # Test rapide pour voir si BleakScanner fonctionne
                 test_scanner = BleakScanner()
                 await asyncio.wait_for(test_scanner.start(), timeout=1.0)
                 await test_scanner.stop()
             except Exception as e:
                 logger.warning(f"Bluetooth peut ne pas être disponible: {e}")
-                # Continuer quand même le scan
             
             # Scanner les appareils BLE avec détection de métadonnées
             discovered_devices = {}
@@ -108,25 +123,39 @@ class PolarModule:
                         device_type = 'verity'
                     
                     if device_type:
-                        # Utiliser le RSSI de advertisement_data
                         rssi = adv_data.rssi if adv_data else -50
                         
                         polar_devices.append({
                             'device_type': device_type,
                             'device_address': device.address,
                             'name': device.name,
-                            'rssi': rssi
+                            'rssi': rssi,
+                            'signal_quality': self._calculate_signal_quality(rssi)
                         })
-                        logger.info(f"Appareil Polar trouvé: {device.name} ({device.address})")
+                        logger.info(f"Appareil Polar trouvé: {device.name} ({device.address}) RSSI: {rssi}")
             
-            logger.info(
-                f"Scan terminé: {len(polar_devices)} appareils Polar trouvés sur {len(discovered_devices)} appareils BLE détectés")
+            # Trier par force du signal
+            polar_devices.sort(key=lambda x: x['rssi'], reverse=True)
+            
+            logger.info(f"Scan terminé: {len(polar_devices)} appareils Polar trouvés")
             return polar_devices
         
         except Exception as e:
             logger.error(f"Erreur scan Bluetooth: {e}")
-            # Retourner une liste vide plutôt qu'une erreur
             return []
+    
+    def _calculate_signal_quality(self, rssi: int) -> str:
+        """Calcule la qualité du signal basée sur le RSSI"""
+        if rssi > -50:
+            return "excellent"
+        elif rssi > -60:
+            return "très bon"
+        elif rssi > -70:
+            return "bon"
+        elif rssi > -80:
+            return "moyen"
+        else:
+            return "faible"
     
     async def connect_device(self, device_type: str, device_address: str) -> bool:
         """Connecte à un appareil Polar"""
@@ -183,6 +212,10 @@ class PolarModule:
                 logger.warning(f"Aucun collecteur actif pour {device_type}")
                 return False
             
+            # Flush les buffers CSV avant déconnexion
+            if self.csv_recording:
+                self._flush_csv_buffer(device_type)
+            
             # Arrêter la collecte et déconnecter
             await collector.disconnect()
             
@@ -203,8 +236,12 @@ class PolarModule:
     def _handle_device_data(self, device_type: str, data: Dict[str, Any]):
         """Gère les nouvelles données d'un appareil"""
         try:
-            # Incrémenter le compteur
+            # Incrémenter les compteurs
             self.session_stats['data_points_collected'] += 1
+            if data.get('heart_rate'):
+                self.session_stats['total_hr_samples'] += 1
+            if data.get('rr_intervals'):
+                self.session_stats['total_rr_intervals'] += len(data['rr_intervals'])
             
             # Récupérer les métriques temps réel si disponibles
             collector = self.collectors.get(device_type)
@@ -239,6 +276,10 @@ class PolarModule:
             
             # Actions selon le statut
             if status == DeviceStatus.DISCONNECTED:
+                # Flush CSV si enregistrement actif
+                if self.csv_recording:
+                    self._flush_csv_buffer(device_type)
+                
                 self.collectors[device_type] = None
                 self.session_stats['devices_connected'] = max(0, self.session_stats['devices_connected'] - 1)
             elif status == DeviceStatus.ERROR:
@@ -292,33 +333,59 @@ class PolarModule:
         except Exception as e:
             logger.error(f"Erreur émission erreur: {e}")
     
-    # ===== GESTION CSV =====
+    # ===== GESTION CSV OPTIMISÉE =====
     
-    def start_csv_recording(self, filename: Optional[str] = None) -> str:
-        """Démarre l'enregistrement CSV"""
+    def start_csv_recording(self, filename_prefix: Optional[str] = None) -> Dict[str, str]:
+        """Démarre l'enregistrement CSV avec format optimisé"""
         if self.csv_recording:
             logger.warning("Enregistrement CSV déjà en cours")
-            return self.csv_file.name if self.csv_file else ""
+            return {}
         
         try:
-            # Générer le nom de fichier
-            if not filename:
+            # Générer le préfixe de nom de fichier
+            if not filename_prefix:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"polar_session_{timestamp}.csv"
+                filename_prefix = f"polar_session_{timestamp}"
             
-            filepath = self.config['csv_directory'] / filename
+            filenames_created = {}
             
-            # Ouvrir le fichier
-            self.csv_file = open(filepath, 'w', newline='', encoding='utf-8')
+            # Créer un fichier CSV pour chaque capteur connecté
+            for device_type, collector in self.collectors.items():
+                if collector and collector.is_connected:
+                    filename = f"{filename_prefix}_{device_type}.csv"
+                    filepath = self.config['csv_directory'] / filename
+                    
+                    # Ouvrir le fichier
+                    self.csv_files[device_type] = open(filepath, 'w', newline='', encoding='utf-8')
+                    
+                    # Créer le writer avec les en-têtes optimisés
+                    fieldnames = [
+                        'timestamp',  # Unix timestamp avec millisecondes
+                        'heart_rate_bpm',  # Fréquence cardiaque
+                        'rr_interval_ms',  # Un seul intervalle RR par ligne
+                        'breathing_rate_rpm',  # Fréquence respiratoire RSA
+                        'breathing_amplitude',  # Amplitude RSA
+                        'breathing_quality',  # Qualité du signal RSA
+                        'battery_level'  # Niveau batterie
+                    ]
+                    
+                    self.csv_writers[device_type] = csv.DictWriter(
+                        self.csv_files[device_type],
+                        fieldnames=fieldnames,
+                        delimiter=self.config['csv_delimiter']
+                    )
+                    self.csv_writers[device_type].writeheader()
+                    self.csv_lines_written[device_type] = 0
+                    
+                    # Initialiser le buffer
+                    self.write_buffers[device_type] = []
+                    
+                    filenames_created[device_type] = filename
+                    logger.info(f"📝 Fichier CSV créé pour {device_type}: {filename}")
             
-            # Créer les en-têtes
-            fieldnames = self._generate_csv_headers()
-            self.csv_writer = csv.DictWriter(
-                self.csv_file,
-                fieldnames=fieldnames,
-                delimiter=self.config['csv_delimiter']
-            )
-            self.csv_writer.writeheader()
+            if not filenames_created:
+                logger.warning("Aucun capteur connecté pour l'enregistrement")
+                return {}
             
             self.csv_recording = True
             self.csv_session_start = datetime.now()
@@ -326,17 +393,16 @@ class PolarModule:
             
             # Notifier via WebSocket
             self.websocket_manager.emit_to_module('polar', 'csv_recording_started', {
-                'filename': filename,
+                'filenames': filenames_created,
                 'timestamp': self.csv_session_start.isoformat()
             })
             
-            logger.info(f"📝 Enregistrement CSV démarré: {filename}")
-            return str(filepath)
+            return filenames_created
         
         except Exception as e:
             logger.error(f"Erreur démarrage CSV: {e}")
             self.csv_recording = False
-            return ""
+            return {}
     
     def stop_csv_recording(self) -> Dict[str, Any]:
         """Arrête l'enregistrement CSV"""
@@ -345,160 +411,146 @@ class PolarModule:
             return {}
         
         try:
-            # Écrire les dernières données du buffer
-            self._flush_csv_buffer()
-            
-            # Fermer le fichier
-            if self.csv_file:
-                self.csv_file.close()
-            
-            # Calculer les statistiques
+            # Calculer la durée
             duration = (datetime.now() - self.csv_session_start).total_seconds() if self.csv_session_start else 0
+            
+            files_info = {}
+            total_lines = 0
+            
+            # Flush et fermer chaque fichier CSV
+            for device_type in ['h10', 'verity']:
+                if self.csv_files[device_type]:
+                    # Flush le buffer restant
+                    self._flush_csv_buffer(device_type)
+                    
+                    # Fermer le fichier
+                    self.csv_files[device_type].close()
+                    
+                    filename = self.csv_files[device_type].name
+                    lines = self.csv_lines_written[device_type]
+                    
+                    files_info[device_type] = {
+                        'filename': Path(filename).name,
+                        'lines_written': lines,
+                        'file_size': Path(filename).stat().st_size if Path(filename).exists() else 0
+                    }
+                    total_lines += lines
+                    
+                    # Réinitialiser
+                    self.csv_files[device_type] = None
+                    self.csv_writers[device_type] = None
+                    self.csv_lines_written[device_type] = 0
+                    self.write_buffers[device_type] = []
+            
+            # Statistiques complètes
             stats = {
-                'filename': self.csv_file.name if self.csv_file else "",
-                'duration': duration,
-                'lines_written': self.session_stats['csv_lines_written'],
+                'files': files_info,
+                'duration': round(duration, 2),
+                'total_lines_written': total_lines,
+                'total_rr_intervals': self.session_stats['total_rr_intervals'],
+                'total_hr_samples': self.session_stats['total_hr_samples'],
+                'average_data_rate': round(total_lines / duration, 1) if duration > 0 else 0,
                 'timestamp': datetime.now().isoformat()
             }
             
             # Réinitialiser
             self.csv_recording = False
-            self.csv_file = None
-            self.csv_writer = None
             self.csv_session_start = None
-            self.session_stats['csv_lines_written'] = 0
             
             # Notifier via WebSocket
             self.websocket_manager.emit_to_module('polar', 'csv_recording_stopped', stats)
             
-            logger.info(f"⏹️ Enregistrement CSV arrêté: {stats['lines_written']} lignes")
+            logger.info(f"⏹️ Enregistrement CSV arrêté: {total_lines} lignes, {duration:.1f}s")
             return stats
         
         except Exception as e:
             logger.error(f"Erreur arrêt CSV: {e}")
             return {}
     
-    def _generate_csv_headers(self) -> List[str]:
-        """Génère les en-têtes CSV"""
-        headers = ['timestamp', 'session_duration']
-        
-        # Headers pour H10
-        headers.extend([
-            'h10_connected', 'h10_heart_rate', 'h10_last_rr', 'h10_mean_rr',
-            'h10_rmssd', 'h10_mean_bpm', 'h10_min_bpm', 'h10_max_bpm',
-            'h10_breathing_freq', 'h10_breathing_amp', 'h10_breathing_quality',
-            'h10_battery'
-        ])
-        
-        # Headers pour Verity
-        headers.extend([
-            'verity_connected', 'verity_heart_rate', 'verity_last_rr', 'verity_mean_rr',
-            'verity_rmssd', 'verity_mean_bpm', 'verity_min_bpm', 'verity_max_bpm',
-            'verity_breathing_freq', 'verity_breathing_amp', 'verity_breathing_quality',
-            'verity_battery'
-        ])
-        
-        return headers
-    
     def _buffer_csv_data(self, device_type: str, data: Dict[str, Any]):
-        """Met en buffer les données pour l'écriture CSV"""
-        try:
-            # Extraire les métriques pertinentes
-            metrics = data.get('real_time_metrics', {})
-            
-            self.csv_data_buffer[device_type] = {
-                'connected': True,
-                'heart_rate': data.get('heart_rate', 0),
-                'battery': data.get('battery_level', 0),
-                'last_rr': metrics.get('rr_metrics', {}).get('last_rr', 0),
-                'mean_rr': metrics.get('rr_metrics', {}).get('mean_rr', 0),
-                'rmssd': metrics.get('rr_metrics', {}).get('rmssd', 0),
-                'mean_bpm': metrics.get('bpm_metrics', {}).get('mean_bpm', 0),
-                'min_bpm': metrics.get('bpm_metrics', {}).get('min_bpm', 0),
-                'max_bpm': metrics.get('bpm_metrics', {}).get('max_bpm', 0),
-                'breathing_freq': metrics.get('breathing_metrics', {}).get('frequency', 0),
-                'breathing_amp': metrics.get('breathing_metrics', {}).get('amplitude', 0),
-                'breathing_quality': metrics.get('breathing_metrics', {}).get('quality', 'unknown')
-            }
-            
-            # Écrire périodiquement
-            if len(self.csv_data_buffer['h10']) > 0 or len(self.csv_data_buffer['verity']) > 0:
-                self._write_csv_row()
-        
-        except Exception as e:
-            logger.error(f"Erreur buffer CSV: {e}")
-    
-    def _write_csv_row(self):
-        """Écrit une ligne dans le fichier CSV"""
-        if not self.csv_writer:
+        """Ajoute les données au buffer pour écriture optimisée"""
+        if not self.csv_writers.get(device_type):
             return
         
         try:
-            timestamp = datetime.now()
-            duration = (timestamp - self.csv_session_start).total_seconds() if self.csv_session_start else 0
+            base_timestamp = datetime.now().timestamp()
+            metrics = data.get('real_time_metrics', {})
             
-            row = {
-                'timestamp': timestamp.isoformat(),
-                'session_duration': round(duration, 2)
-            }
+            # Données communes
+            breathing_metrics = metrics.get('breathing_metrics', {})
+            breathing_rate = round(breathing_metrics['frequency'], 1) if breathing_metrics.get('frequency',
+                                                                                               0) > 0 else ''
+            breathing_amplitude = round(breathing_metrics['amplitude'], 3) if breathing_metrics.get('frequency',
+                                                                                                    0) > 0 else ''
+            breathing_quality = breathing_metrics.get('quality', '') if breathing_metrics.get('frequency',
+                                                                                              0) > 0 else ''
             
-            # Données H10
-            h10_data = self.csv_data_buffer.get('h10', {})
-            if h10_data:
-                row.update({
-                    'h10_connected': h10_data.get('connected', False),
-                    'h10_heart_rate': h10_data.get('heart_rate', 0),
-                    'h10_last_rr': h10_data.get('last_rr', 0),
-                    'h10_mean_rr': h10_data.get('mean_rr', 0),
-                    'h10_rmssd': h10_data.get('rmssd', 0),
-                    'h10_mean_bpm': h10_data.get('mean_bpm', 0),
-                    'h10_min_bpm': h10_data.get('min_bpm', 0),
-                    'h10_max_bpm': h10_data.get('max_bpm', 0),
-                    'h10_breathing_freq': h10_data.get('breathing_freq', 0),
-                    'h10_breathing_amp': h10_data.get('breathing_amp', 0),
-                    'h10_breathing_quality': h10_data.get('breathing_quality', 'unknown'),
-                    'h10_battery': h10_data.get('battery', 0)
-                })
-            else:
-                row.update({f'h10_{key}': 0 for key in ['connected', 'heart_rate', 'last_rr', 'mean_rr',
-                                                        'rmssd', 'mean_bpm', 'min_bpm', 'max_bpm', 'breathing_freq',
-                                                        'breathing_amp', 'battery']})
-                row['h10_breathing_quality'] = 'unknown'
+            heart_rate = data.get('heart_rate', '')
+            battery_level = data.get('battery_level', '')
             
-            # Données Verity
-            verity_data = self.csv_data_buffer.get('verity', {})
-            if verity_data:
-                row.update({
-                    'verity_connected': verity_data.get('connected', False),
-                    'verity_heart_rate': verity_data.get('heart_rate', 0),
-                    'verity_last_rr': verity_data.get('last_rr', 0),
-                    'verity_mean_rr': verity_data.get('mean_rr', 0),
-                    'verity_rmssd': verity_data.get('rmssd', 0),
-                    'verity_mean_bpm': verity_data.get('mean_bpm', 0),
-                    'verity_min_bpm': verity_data.get('min_bpm', 0),
-                    'verity_max_bpm': verity_data.get('max_bpm', 0),
-                    'verity_breathing_freq': verity_data.get('breathing_freq', 0),
-                    'verity_breathing_amp': verity_data.get('breathing_amp', 0),
-                    'verity_breathing_quality': verity_data.get('breathing_quality', 'unknown'),
-                    'verity_battery': verity_data.get('battery', 0)
-                })
-            else:
-                row.update({f'verity_{key}': 0 for key in ['connected', 'heart_rate', 'last_rr', 'mean_rr',
-                                                           'rmssd', 'mean_bpm', 'min_bpm', 'max_bpm', 'breathing_freq',
-                                                           'breathing_amp', 'battery']})
-                row['verity_breathing_quality'] = 'unknown'
+            # Traiter les intervalles RR
+            rr_intervals = data.get('rr_intervals', [])
             
-            self.csv_writer.writerow(row)
-            self.csv_file.flush()
-            self.session_stats['csv_lines_written'] += 1
+            if rr_intervals:
+                # Créer une ligne pour chaque intervalle RR
+                for i, rr_interval in enumerate(rr_intervals):
+                    # Calculer le timestamp précis de chaque RR
+                    rr_timestamp = base_timestamp - (len(rr_intervals) - i - 1) * (rr_interval / 1000.0)
+                    
+                    row = {
+                        'timestamp': round(rr_timestamp, 3),
+                        'heart_rate_bpm': heart_rate,
+                        'rr_interval_ms': round(rr_interval, 1),
+                        'breathing_rate_rpm': breathing_rate,
+                        'breathing_amplitude': breathing_amplitude,
+                        'breathing_quality': breathing_quality,
+                        'battery_level': battery_level
+                    }
+                    
+                    self.write_buffers[device_type].append(row)
+            
+            elif self.config['write_empty_intervals'] and heart_rate:
+                # Si pas d'intervalles RR mais on a un BPM, écrire une ligne
+                row = {
+                    'timestamp': round(base_timestamp, 3),
+                    'heart_rate_bpm': heart_rate,
+                    'rr_interval_ms': '',
+                    'breathing_rate_rpm': breathing_rate,
+                    'breathing_amplitude': breathing_amplitude,
+                    'breathing_quality': breathing_quality,
+                    'battery_level': battery_level
+                }
+                
+                self.write_buffers[device_type].append(row)
+            
+            # Vérifier si on doit flush le buffer
+            if len(self.write_buffers[device_type]) >= self.max_buffer_size:
+                self._flush_csv_buffer(device_type)
         
         except Exception as e:
-            logger.error(f"Erreur écriture CSV: {e}")
+            logger.error(f"Erreur buffer CSV {device_type}: {e}")
     
-    def _flush_csv_buffer(self):
-        """Vide le buffer CSV"""
-        if self.csv_writer and (self.csv_data_buffer['h10'] or self.csv_data_buffer['verity']):
-            self._write_csv_row()
+    def _flush_csv_buffer(self, device_type: str):
+        """Écrit le buffer dans le fichier CSV"""
+        if not self.csv_writers.get(device_type) or not self.write_buffers[device_type]:
+            return
+        
+        try:
+            # Écrire toutes les lignes du buffer
+            for row in self.write_buffers[device_type]:
+                self.csv_writers[device_type].writerow(row)
+                self.csv_lines_written[device_type] += 1
+            
+            # Flush le fichier
+            self.csv_files[device_type].flush()
+            
+            # Vider le buffer
+            self.write_buffers[device_type] = []
+            
+            logger.debug(f"Buffer CSV flush pour {device_type}: {self.csv_lines_written[device_type]} lignes totales")
+        
+        except Exception as e:
+            logger.error(f"Erreur flush CSV {device_type}: {e}")
     
     def get_csv_files(self) -> List[Dict[str, Any]]:
         """Retourne la liste des fichiers CSV disponibles"""
@@ -507,12 +559,31 @@ class PolarModule:
         try:
             for csv_file in self.config['csv_directory'].glob("*.csv"):
                 file_stat = csv_file.stat()
+                
+                # Identifier le type de capteur depuis le nom du fichier
+                device_type = 'unknown'
+                if '_h10.csv' in csv_file.name:
+                    device_type = 'h10'
+                elif '_verity.csv' in csv_file.name:
+                    device_type = 'verity'
+                
+                # Analyser rapidement le fichier pour compter les lignes
+                line_count = 0
+                try:
+                    with open(csv_file, 'r', encoding='utf-8') as f:
+                        line_count = sum(1 for line in f) - 1  # -1 pour l'en-tête
+                except:
+                    pass
+                
                 files.append({
                     'filename': csv_file.name,
+                    'device_type': device_type,
                     'size': file_stat.st_size,
                     'size_str': self._format_file_size(file_stat.st_size),
+                    'lines': line_count,
                     'created': datetime.fromtimestamp(file_stat.st_ctime).isoformat(),
-                    'modified': datetime.fromtimestamp(file_stat.st_mtime).isoformat()
+                    'modified': datetime.fromtimestamp(file_stat.st_mtime).isoformat(),
+                    'duration_estimate': self._estimate_duration(csv_file.name)
                 })
             
             # Trier par date de modification (plus récent en premier)
@@ -530,10 +601,20 @@ class PolarModule:
             
             with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
                 # Parcourir tous les fichiers CSV
-                for csv_file in self.config['csv_directory'].glob("*.csv"):
+                csv_files = list(self.config['csv_directory'].glob("*.csv"))
+                
+                if not csv_files:
+                    logger.warning("Aucun fichier CSV à zipper")
+                    return None
+                
+                for csv_file in csv_files:
                     # Ajouter chaque fichier au ZIP
                     zip_file.write(csv_file, csv_file.name)
                     logger.info(f"Fichier ajouté au ZIP: {csv_file.name}")
+                
+                # Ajouter un fichier README
+                readme_content = self._generate_readme_content()
+                zip_file.writestr('README.txt', readme_content)
             
             zip_buffer.seek(0)
             return zip_buffer
@@ -550,16 +631,85 @@ class PolarModule:
             size /= 1024.0
         return f"{size:.1f} TB"
     
+    def _estimate_duration(self, filename: str) -> str:
+        """Estime la durée d'enregistrement basée sur le nom du fichier"""
+        try:
+            # Format attendu: polar_session_YYYYMMDD_HHMMSS_device.csv
+            parts = filename.split('_')
+            if len(parts) >= 4:
+                date_str = parts[2]  # YYYYMMDD
+                time_str = parts[3]  # HHMMSS
+                
+                # Extraire aussi de la date de modification du fichier
+                filepath = self.config['csv_directory'] / filename
+                if filepath.exists():
+                    created = datetime.fromtimestamp(filepath.stat().st_ctime)
+                    modified = datetime.fromtimestamp(filepath.stat().st_mtime)
+                    duration = (modified - created).total_seconds()
+                    
+                    if duration > 0:
+                        hours = int(duration // 3600)
+                        minutes = int((duration % 3600) // 60)
+                        seconds = int(duration % 60)
+                        
+                        if hours > 0:
+                            return f"{hours}h {minutes}m {seconds}s"
+                        elif minutes > 0:
+                            return f"{minutes}m {seconds}s"
+                        else:
+                            return f"{seconds}s"
+        except:
+            pass
+        
+        return "N/A"
+    
+    def _generate_readme_content(self) -> str:
+        """Génère le contenu du fichier README pour le ZIP"""
+        return f"""Module Polar - BioMedical Hub
+============================
+
+Date d'export: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+Format des fichiers CSV:
+-----------------------
+Délimiteur: {self.config['csv_delimiter']}
+Encodage: UTF-8
+
+Colonnes:
+- timestamp: Timestamp Unix avec millisecondes
+- heart_rate_bpm: Fréquence cardiaque en battements par minute
+- rr_interval_ms: Intervalle RR en millisecondes (un par ligne)
+- breathing_rate_rpm: Fréquence respiratoire RSA en respirations par minute
+- breathing_amplitude: Amplitude de la respiration RSA
+- breathing_quality: Qualité du signal RSA (excellent/good/fair/poor)
+- battery_level: Niveau de batterie du capteur en %
+
+Notes:
+------
+- Chaque ligne représente un intervalle RR unique
+- Les timestamps sont calculés rétrospectivement pour chaque RR
+- La respiration est calculée par analyse RSA (Respiratory Sinus Arrhythmia)
+- Les fichiers _h10.csv proviennent du Polar H10
+- Les fichiers _verity.csv proviennent du Polar Verity Sense
+
+Pour plus d'informations: https://github.com/biomedical-hub
+"""
+    
     # ===== MÉTHODES D'INFORMATION =====
     
     async def get_devices_status(self) -> Dict[str, Any]:
-        """Retourne le statut de tous les appareils"""
+        """Retourne le statut complet de tous les appareils"""
         status = {
             'h10': None,
             'verity': None,
             'session_stats': self.session_stats.copy(),
-            'csv_recording': self.csv_recording
+            'csv_recording': self.csv_recording,
+            'csv_session_duration': None
         }
+        
+        # Calculer la durée de session CSV si active
+        if self.csv_recording and self.csv_session_start:
+            status['csv_session_duration'] = (datetime.now() - self.csv_session_start).total_seconds()
         
         for device_type, collector in self.collectors.items():
             if collector:
@@ -567,12 +717,18 @@ class PolarModule:
                     device_info = await collector.get_device_info()
                     latest_data = await collector.get_latest_data()
                     
+                    # Ajouter des métriques de qualité
+                    connection_quality = collector.get_connection_quality() if hasattr(collector,
+                                                                                       'get_connection_quality') else {}
+                    
                     status[device_type] = {
                         'connected': collector.is_connected,
                         'collecting': collector.is_collecting,
                         'device_info': device_info,
                         'latest_data': latest_data,
-                        'connection_quality': collector.is_data_fresh()
+                        'connection_quality': connection_quality,
+                        'data_freshness': collector.is_data_fresh(),
+                        'last_update': latest_data.get('last_update') if latest_data else None
                     }
                 except Exception as e:
                     logger.error(f"Erreur récupération statut {device_type}: {e}")
@@ -584,7 +740,8 @@ class PolarModule:
         status = {
             'available': False,
             'message': 'Unknown',
-            'error': None
+            'error': None,
+            'platform': self._get_platform_info()
         }
         
         try:
@@ -602,10 +759,15 @@ class PolarModule:
             status['error'] = 'Le Bluetooth met trop de temps à répondre'
         
         except OSError as e:
-            if "could not be started" in str(e).lower():
+            error_str = str(e).lower()
+            if "could not be started" in error_str:
                 status['available'] = False
                 status['message'] = 'Adaptateur Bluetooth non trouvé'
                 status['error'] = 'Vérifiez que le Bluetooth est activé dans Windows'
+            elif "permissions" in error_str:
+                status['available'] = False
+                status['message'] = 'Permissions insuffisantes'
+                status['error'] = 'L\'application nécessite les permissions Bluetooth'
             else:
                 status['available'] = False
                 status['message'] = f'Erreur système: {str(e)}'
@@ -619,11 +781,42 @@ class PolarModule:
         logger.info(f"Statut Bluetooth: {status}")
         return status
     
+    def _get_platform_info(self) -> Dict[str, str]:
+        """Récupère les informations de la plateforme"""
+        import platform
+        return {
+            'system': platform.system(),
+            'release': platform.release(),
+            'version': platform.version(),
+            'machine': platform.machine()
+        }
+    
+    def get_csv_status(self) -> Dict[str, Any]:
+        """Retourne le statut de l'enregistrement CSV"""
+        status = {
+            'recording': self.csv_recording,
+            'session_start': self.csv_session_start.isoformat() if self.csv_session_start else None,
+            'duration': None,
+            'files_active': {},
+            'lines_written': self.csv_lines_written.copy(),
+            'buffer_sizes': {}
+        }
+        
+        if self.csv_recording and self.csv_session_start:
+            status['duration'] = (datetime.now() - self.csv_session_start).total_seconds()
+        
+        for device_type in ['h10', 'verity']:
+            if self.csv_files.get(device_type):
+                status['files_active'][device_type] = Path(self.csv_files[device_type].name).name
+            status['buffer_sizes'][device_type] = len(self.write_buffers.get(device_type, []))
+        
+        return status
+    
     async def cleanup(self):
         """Nettoie toutes les ressources"""
         logger.info("Nettoyage du module Polar...")
         
-        # Arrêter l'enregistrement CSV
+        # Arrêter l'enregistrement CSV si actif
         if self.csv_recording:
             self.stop_csv_recording()
         
@@ -635,6 +828,15 @@ class PolarModule:
                 except Exception as e:
                     logger.error(f"Erreur nettoyage {device_type}: {e}")
                 self.collectors[device_type] = None
+        
+        # Réinitialiser les statistiques
+        self.session_stats = {
+            'start_time': None,
+            'devices_connected': 0,
+            'data_points_collected': 0,
+            'total_rr_intervals': 0,
+            'total_hr_samples': 0
+        }
         
         logger.info("Module Polar nettoyé")
 
@@ -802,19 +1004,16 @@ def register_polar_websocket_events(websocket_manager, polar_module):
     
     def handle_start_csv_recording(data):
         """Démarre l'enregistrement CSV"""
-        filename = data.get('filename')
-        filepath = polar_module.start_csv_recording(filename)
+        filename_prefix = data.get('filename_prefix')
+        filenames = polar_module.start_csv_recording(filename_prefix)
         
-        websocket_manager.emit_to_module('polar', 'polar_csv_started', {
-            'filepath': filepath,
-            'timestamp': datetime.now().isoformat()
-        })
+        # La notification est déjà gérée dans start_csv_recording
     
     def handle_stop_csv_recording(data):
         """Arrête l'enregistrement CSV"""
         stats = polar_module.stop_csv_recording()
         
-        websocket_manager.emit_to_module('polar', 'polar_csv_stopped', stats)
+        # La notification est déjà gérée dans stop_csv_recording
     
     def handle_get_csv_files(data):
         """Récupère la liste des fichiers CSV"""
@@ -822,8 +1021,15 @@ def register_polar_websocket_events(websocket_manager, polar_module):
         
         websocket_manager.emit_to_module('polar', 'polar_csv_files', {
             'files': files,
+            'count': len(files),
             'timestamp': datetime.now().isoformat()
         })
+    
+    def handle_get_csv_status(data):
+        """Récupère le statut de l'enregistrement CSV"""
+        status = polar_module.get_csv_status()
+        
+        websocket_manager.emit_to_module('polar', 'polar_csv_status', status)
     
     def handle_get_status(data):
         """Récupère le statut des appareils"""
@@ -871,7 +1077,8 @@ def register_polar_websocket_events(websocket_manager, polar_module):
                             'heart_rate': latest_data.get('heart_rate', 0),
                             'rmssd': metrics.get('rr_metrics', {}).get('rmssd', 0),
                             'mean_rr': metrics.get('rr_metrics', {}).get('mean_rr', 0),
-                            'hrv_score': metrics.get('rr_metrics', {}).get('rmssd', 0) * 0.8  # Score simplifié
+                            'hrv_score': metrics.get('rr_metrics', {}).get('rmssd', 0) * 0.8,  # Score simplifié
+                            'breathing_rate': metrics.get('breathing_metrics', {}).get('frequency', 0)
                         }
                 
                 websocket_manager.emit_to_module('polar', 'polar_hrv_data', hrv_data)
@@ -910,9 +1117,10 @@ def register_polar_websocket_events(websocket_manager, polar_module):
         'start_csv_recording': handle_start_csv_recording,
         'stop_csv_recording': handle_stop_csv_recording,
         'get_csv_files': handle_get_csv_files,
+        'get_csv_status': handle_get_csv_status,
         'get_status': handle_get_status,
-        'get_hrv_data': handle_get_hrv_data,  # Ajout pour compatibilité
-        'check_bluetooth': handle_check_bluetooth  # Nouveau handler
+        'get_hrv_data': handle_get_hrv_data,
+        'check_bluetooth': handle_check_bluetooth
     }
     
     websocket_manager.register_module_events('polar', polar_events)
@@ -1005,11 +1213,11 @@ def init_polar_module(app, websocket_manager):
     def start_csv_recording():
         """Démarre l'enregistrement CSV"""
         try:
-            filename = request.json.get('filename') if request.json else None
-            filepath = polar_module.start_csv_recording(filename)
+            filename_prefix = request.json.get('filename_prefix') if request.json else None
+            filenames = polar_module.start_csv_recording(filename_prefix)
             return jsonify({
-                'success': bool(filepath),
-                'filepath': filepath,
+                'success': bool(filenames),
+                'filenames': filenames,
                 'timestamp': datetime.now().isoformat()
             })
         except Exception as e:
@@ -1024,6 +1232,16 @@ def init_polar_module(app, websocket_manager):
             return jsonify(stats)
         except Exception as e:
             logger.error(f"Erreur arrêt CSV: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/polar/csv/status')
+    def get_csv_status():
+        """Récupère le statut de l'enregistrement CSV"""
+        try:
+            status = polar_module.get_csv_status()
+            return jsonify(status)
+        except Exception as e:
+            logger.error(f"Erreur récupération statut CSV: {e}")
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/polar/csv/list')
@@ -1044,6 +1262,10 @@ def init_polar_module(app, websocket_manager):
     def download_polar_csv(filename):
         """Télécharge un fichier CSV spécifique"""
         try:
+            # Vérifier que le nom de fichier est sûr (éviter path traversal)
+            if '..' in filename or '/' in filename or '\\' in filename:
+                abort(400)
+            
             filepath = polar_module.config['csv_directory'] / filename
             
             if not filepath.exists():
@@ -1067,7 +1289,7 @@ def init_polar_module(app, websocket_manager):
             zip_buffer = polar_module.create_csv_zip()
             
             if not zip_buffer:
-                return jsonify({'error': 'Erreur création ZIP'}), 500
+                return jsonify({'error': 'Aucun fichier CSV disponible'}), 404
             
             # Générer le nom du fichier
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1081,151 +1303,6 @@ def init_polar_module(app, websocket_manager):
             )
         except Exception as e:
             logger.error(f"Erreur téléchargement ZIP: {e}")
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/polar/sessions')
-    def get_polar_sessions():
-        """Récupère la liste des sessions enregistrées avec statistiques"""
-        try:
-            files = polar_module.get_csv_files()
-            
-            # Analyser chaque fichier pour obtenir des stats
-            sessions = []
-            for file_info in files:
-                try:
-                    filepath = polar_module.config['csv_directory'] / file_info['filename']
-                    
-                    # Lire quelques lignes pour obtenir des stats basiques
-                    with open(filepath, 'r', encoding='utf-8') as f:
-                        reader = csv.DictReader(f, delimiter=polar_module.config['csv_delimiter'])
-                        rows = list(reader)
-                        
-                        if rows:
-                            # Calculer la durée
-                            first_row = rows[0]
-                            last_row = rows[-1]
-                            duration = float(last_row.get('session_duration', 0))
-                            
-                            # Déterminer les appareils utilisés
-                            devices_used = []
-                            if any(float(row.get('h10_heart_rate', 0)) > 0 for row in rows[:10]):
-                                devices_used.append('h10')
-                            if any(float(row.get('verity_heart_rate', 0)) > 0 for row in rows[:10]):
-                                devices_used.append('verity')
-                            
-                            session_info = {
-                                **file_info,
-                                'duration': duration,
-                                'duration_str': f"{int(duration // 60)}m {int(duration % 60)}s",
-                                'data_points': len(rows),
-                                'devices_used': devices_used,
-                                'start_time': first_row.get('timestamp', ''),
-                                'end_time': last_row.get('timestamp', '')
-                            }
-                            
-                            sessions.append(session_info)
-                except Exception as e:
-                    logger.warning(f"Impossible d'analyser {file_info['filename']}: {e}")
-                    sessions.append(file_info)
-            
-            return jsonify({
-                'sessions': sessions,
-                'count': len(sessions),
-                'timestamp': datetime.now().isoformat()
-            })
-        except Exception as e:
-            logger.error(f"Erreur récupération sessions: {e}")
-            return jsonify({'error': str(e)}), 500
-    
-    @app.route('/api/polar/sessions/<filename>/analyze')
-    def analyze_polar_session(filename):
-        """Analyse une session CSV et retourne des statistiques détaillées"""
-        try:
-            filepath = polar_module.config['csv_directory'] / filename
-            
-            if not filepath.exists():
-                abort(404)
-            
-            # Lire et analyser le fichier CSV
-            with open(filepath, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f, delimiter=polar_module.config['csv_delimiter'])
-                rows = list(reader)
-            
-            if not rows:
-                return jsonify({'error': 'Fichier CSV vide'}), 400
-            
-            # Analyser les données
-            analysis = {
-                'filename': filename,
-                'total_data_points': len(rows),
-                'h10': {
-                    'connected': False,
-                    'heart_rate': {'min': None, 'max': None, 'mean': None},
-                    'rr_intervals': {'mean': None, 'rmssd': None},
-                    'breathing': {'mean_freq': None}
-                },
-                'verity': {
-                    'connected': False,
-                    'heart_rate': {'min': None, 'max': None, 'mean': None},
-                    'rr_intervals': {'mean': None, 'rmssd': None},
-                    'breathing': {'mean_freq': None}
-                }
-            }
-            
-            # Analyser H10
-            h10_hrs = [float(row['h10_heart_rate']) for row in rows if float(row.get('h10_heart_rate', 0)) > 0]
-            if h10_hrs:
-                analysis['h10']['connected'] = True
-                analysis['h10']['heart_rate'] = {
-                    'min': min(h10_hrs),
-                    'max': max(h10_hrs),
-                    'mean': sum(h10_hrs) / len(h10_hrs)
-                }
-                
-                # RR et respiration
-                h10_rmssd = [float(row['h10_rmssd']) for row in rows if float(row.get('h10_rmssd', 0)) > 0]
-                if h10_rmssd:
-                    analysis['h10']['rr_intervals']['rmssd'] = sum(h10_rmssd) / len(h10_rmssd)
-                
-                h10_breathing = [float(row['h10_breathing_freq']) for row in rows if
-                                 float(row.get('h10_breathing_freq', 0)) > 0]
-                if h10_breathing:
-                    analysis['h10']['breathing']['mean_freq'] = sum(h10_breathing) / len(h10_breathing)
-            
-            # Analyser Verity (similaire)
-            verity_hrs = [float(row['verity_heart_rate']) for row in rows if float(row.get('verity_heart_rate', 0)) > 0]
-            if verity_hrs:
-                analysis['verity']['connected'] = True
-                analysis['verity']['heart_rate'] = {
-                    'min': min(verity_hrs),
-                    'max': max(verity_hrs),
-                    'mean': sum(verity_hrs) / len(verity_hrs)
-                }
-                
-                verity_rmssd = [float(row['verity_rmssd']) for row in rows if float(row.get('verity_rmssd', 0)) > 0]
-                if verity_rmssd:
-                    analysis['verity']['rr_intervals']['rmssd'] = sum(verity_rmssd) / len(verity_rmssd)
-                
-                verity_breathing = [float(row['verity_breathing_freq']) for row in rows if
-                                    float(row.get('verity_breathing_freq', 0)) > 0]
-                if verity_breathing:
-                    analysis['verity']['breathing']['mean_freq'] = sum(verity_breathing) / len(verity_breathing)
-            
-            # Durée de session
-            duration = float(rows[-1].get('session_duration', 0))
-            analysis['session_duration'] = {
-                'seconds': duration,
-                'formatted': f"{int(duration // 60)}m {int(duration % 60)}s"
-            }
-            
-            # Timestamps
-            analysis['start_time'] = rows[0].get('timestamp')
-            analysis['end_time'] = rows[-1].get('timestamp')
-            
-            return jsonify(analysis)
-        
-        except Exception as e:
-            logger.error(f"Erreur analyse session: {e}")
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/polar/bluetooth/status')

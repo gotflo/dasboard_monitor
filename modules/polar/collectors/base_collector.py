@@ -7,6 +7,9 @@ from dataclasses import dataclass
 from enum import Enum
 from collections import deque
 import statistics
+import numpy as np
+from scipy import signal
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +72,215 @@ class BreathingMetrics:
     amplitude: float = 0.0
     variability_percent: float = 0.0
     quality: str = "unknown"
+
+
+class RSABreathingCalculator:
+    """Calculateur de respiration basé sur l'Arythmie Sinusale Respiratoire (RSA)"""
+    
+    def __init__(self):
+        # Configuration
+        self.breathing_window = 30  # Fenêtre de 30 secondes
+        self.calculation_interval = 3  # Calcul toutes les 3 secondes
+        self.last_calculation_time = 0
+        
+        # Buffers de données
+        self.rr_buffer = deque(maxlen=200)  # Buffer circulaire pour RR
+        self.rr_timestamps = deque(maxlen=200)  # Timestamps correspondants
+        self.breathing_history = deque(maxlen=10)  # Historique pour lissage
+        
+        # Résultats
+        self.breathing_rate = 0.0  # Respirations par minute
+        self.breathing_amplitude = 0.0  # Amplitude de la respiration
+        self.breathing_quality = 'unknown'  # Qualité du signal
+        
+        logger.info("Calculateur RSA initialisé")
+    
+    def add_rr_intervals(self, rr_intervals: List[float], timestamp: float = None):
+        """Ajoute de nouveaux intervalles RR au buffer"""
+        if not rr_intervals:
+            return
+        
+        current_time = timestamp or time.time()
+        
+        # Ajouter chaque intervalle avec son timestamp estimé
+        for i, rr in enumerate(rr_intervals):
+            if 200 <= rr <= 2000:  # Validation physiologique
+                self.rr_buffer.append(rr)
+                # Estimer le timestamp pour chaque RR
+                rr_time = current_time - (len(rr_intervals) - i - 1) * (rr / 1000.0)
+                self.rr_timestamps.append(rr_time)
+    
+    def calculate_breathing_metrics(self) -> Dict[str, float]:
+        """Calcule les métriques de respiration selon l'intervalle défini"""
+        current_time = time.time()
+        
+        # Vérifier si c'est le moment de calculer
+        if current_time - self.last_calculation_time < self.calculation_interval:
+            return {
+                'rate': self.breathing_rate,
+                'amplitude': self.breathing_amplitude,
+                'quality': self.breathing_quality
+            }
+        
+        self.last_calculation_time = current_time
+        
+        # Effectuer le calcul RSA
+        return self._perform_rsa_calculation(current_time)
+    
+    def _perform_rsa_calculation(self, current_time: float) -> Dict[str, float]:
+        """Effectue le calcul RSA sur la fenêtre de données"""
+        # Filtrer les données dans la fenêtre de 30 secondes
+        window_start = current_time - self.breathing_window
+        
+        # Extraire les données de la fenêtre
+        rr_values = []
+        timestamps = []
+        
+        for i, ts in enumerate(self.rr_timestamps):
+            if ts >= window_start:
+                rr_values.append(self.rr_buffer[i])
+                timestamps.append(ts)
+        
+        # Vérifier qu'il y a assez de données (au moins 8 points)
+        if len(rr_values) < 8:
+            logger.debug(f"Pas assez de données RR: {len(rr_values)} points")
+            return {
+                'rate': self.breathing_rate,
+                'amplitude': self.breathing_amplitude,
+                'quality': 'insufficient_data'
+            }
+        
+        try:
+            # Convertir en arrays numpy
+            rr_array = np.array(rr_values)
+            time_array = np.array(timestamps)
+            
+            # 1. Normalisation et détrending
+            rr_normalized = rr_array - np.mean(rr_array)
+            
+            # 2. Lissage avec filtre Savitzky-Golay si assez de points
+            if len(rr_normalized) > 15:
+                window_length = min(15, len(rr_normalized))
+                if window_length % 2 == 0:
+                    window_length -= 1
+                rr_smoothed = signal.savgol_filter(rr_normalized, window_length, 3)
+            else:
+                # Moyenne mobile simple si pas assez de points
+                rr_smoothed = self._moving_average(rr_normalized, min(5, len(rr_normalized)))
+            
+            # 3. Calcul de l'amplitude respiratoire
+            amplitude = np.std(rr_smoothed)
+            self.breathing_amplitude = round(amplitude, 3)
+            
+            # 4. Détection des cycles respiratoires par analyse des passages par zéro
+            breathing_rate = self._detect_breathing_cycles(rr_smoothed, time_array)
+            
+            # 5. Validation et lissage temporel
+            if 5 <= breathing_rate <= 30:  # Plage physiologique
+                self.breathing_history.append(breathing_rate)
+                # Moyenne pondérée avec plus de poids sur les valeurs récentes
+                weights = np.linspace(0.5, 1.0, len(self.breathing_history))
+                self.breathing_rate = np.average(list(self.breathing_history), weights=weights)
+                self.breathing_quality = self._assess_signal_quality(rr_smoothed)
+            else:
+                self.breathing_quality = 'out_of_range'
+            
+            logger.debug(f"RSA: {self.breathing_rate:.1f} rpm, amplitude: {self.breathing_amplitude:.3f}")
+            
+            return {
+                'rate': round(self.breathing_rate, 1),
+                'amplitude': round(self.breathing_amplitude, 3),
+                'quality': self.breathing_quality
+            }
+        
+        except Exception as e:
+            logger.error(f"Erreur calcul RSA: {e}")
+            return {
+                'rate': self.breathing_rate,
+                'amplitude': self.breathing_amplitude,
+                'quality': 'error'
+            }
+    
+    def _detect_breathing_cycles(self, smoothed_data: np.ndarray, timestamps: np.ndarray) -> float:
+        """Détecte les cycles respiratoires par analyse des passages par zéro"""
+        # Détecter les passages par zéro
+        signs = np.sign(smoothed_data)
+        sign_changes = np.where(np.diff(signs) != 0)[0]
+        
+        if len(sign_changes) < 4:
+            return self.breathing_rate  # Pas assez de cycles
+        
+        # Calculer les intervalles entre passages par zéro
+        cycle_times = []
+        for i in range(0, len(sign_changes) - 1, 2):  # Prendre les cycles complets
+            if i + 2 < len(sign_changes):
+                cycle_start = timestamps[sign_changes[i]]
+                cycle_end = timestamps[sign_changes[i + 2]]
+                cycle_duration = cycle_end - cycle_start
+                
+                # Filtrer les cycles physiologiquement plausibles (2-12 secondes)
+                if 2 <= cycle_duration <= 12:
+                    cycle_times.append(cycle_duration)
+        
+        if not cycle_times:
+            return self.breathing_rate
+        
+        # Calculer la fréquence respiratoire moyenne
+        avg_cycle_time = np.median(cycle_times)  # Utiliser la médiane pour robustesse
+        breathing_rate = 60.0 / avg_cycle_time
+        
+        return breathing_rate
+    
+    def _moving_average(self, data: np.ndarray, window_size: int) -> np.ndarray:
+        """Calcule une moyenne mobile simple"""
+        if window_size > len(data):
+            window_size = len(data)
+        
+        weights = np.ones(window_size) / window_size
+        return np.convolve(data, weights, mode='same')
+    
+    def _assess_signal_quality(self, smoothed_data: np.ndarray) -> str:
+        """Évalue la qualité du signal respiratoire"""
+        try:
+            # Calculer le ratio signal/bruit
+            if len(smoothed_data) < 10:
+                return 'poor'
+            
+            # Analyser la régularité des oscillations
+            peaks, _ = signal.find_peaks(smoothed_data)
+            valleys, _ = signal.find_peaks(-smoothed_data)
+            
+            if len(peaks) < 2 or len(valleys) < 2:
+                return 'poor'
+            
+            # Vérifier la régularité des intervalles
+            peak_intervals = np.diff(peaks)
+            if len(peak_intervals) > 0:
+                cv = np.std(peak_intervals) / np.mean(peak_intervals)
+                
+                if cv < 0.2:
+                    return 'excellent'
+                elif cv < 0.35:
+                    return 'good'
+                elif cv < 0.5:
+                    return 'fair'
+                else:
+                    return 'poor'
+            
+            return 'unknown'
+        
+        except:
+            return 'unknown'
+    
+    def reset(self):
+        """Réinitialise le calculateur"""
+        self.rr_buffer.clear()
+        self.rr_timestamps.clear()
+        self.breathing_history.clear()
+        self.breathing_rate = 0.0
+        self.breathing_amplitude = 0.0
+        self.breathing_quality = 'unknown'
+        self.last_calculation_time = 0
 
 
 class BaseCollector(ABC):
@@ -212,7 +424,7 @@ class BaseCollector(ABC):
         except Exception as e:
             logger.error(f"Erreur mise à jour métriques BPM: {e}")
     
-    def update_breathing_metrics(self, breathing_rate: float):
+    def update_breathing_metrics(self, breathing_rate: float, amplitude: float = None, quality: str = None):
         """Met à jour les métriques de respiration"""
         if not self._is_valid_breathing_rate(breathing_rate):
             return
@@ -223,36 +435,18 @@ class BaseCollector(ABC):
             
             self.breathing_metrics.frequency = breathing_rate
             
-            # Amplitude basée sur la variabilité RR
-            if len(self.rr_buffer) >= 10:
-                self.breathing_metrics.amplitude = self._calculate_breathing_amplitude()
+            if amplitude is not None:
+                self.breathing_metrics.amplitude = amplitude
+            
+            if quality is not None:
+                self.breathing_metrics.quality = quality
             
             # Variabilité
             if len(self.breathing_frequency_history) >= 5:
                 self.breathing_metrics.variability_percent = self._calculate_breathing_variability()
-            
-            # Qualité
-            self.breathing_metrics.quality = self._assess_breathing_quality()
         
         except Exception as e:
             logger.error(f"Erreur mise à jour métriques respiration: {e}")
-    
-    def _calculate_breathing_amplitude(self) -> float:
-        """Calcule l'amplitude respiratoire"""
-        try:
-            if len(self.rr_buffer) < 10:
-                return 0.0
-            
-            recent_rr = list(self.rr_buffer)[-30:]
-            
-            if len(recent_rr) >= 3:
-                variance = statistics.variance(recent_rr)
-                amplitude = min(100.0, variance / 10.0)
-                return round(amplitude, 1)
-            
-            return 0.0
-        except:
-            return 0.0
     
     def _calculate_breathing_variability(self) -> float:
         """Calcule la variabilité respiratoire"""
@@ -272,26 +466,6 @@ class BaseCollector(ABC):
             return round(min(100.0, cv_percent), 1)
         except:
             return 0.0
-    
-    def _assess_breathing_quality(self) -> str:
-        """Évalue la qualité de la respiration"""
-        try:
-            freq = self.breathing_metrics.frequency
-            variability = self.breathing_metrics.variability_percent
-            
-            if freq == 0:
-                return "unknown"
-            
-            if 12 <= freq <= 18 and variability <= 15:
-                return "excellent"
-            elif 10 <= freq <= 20 and variability <= 25:
-                return "good"
-            elif 8 <= freq <= 25 and variability <= 35:
-                return "fair"
-            else:
-                return "poor"
-        except:
-            return "unknown"
     
     # ===== VALIDATION =====
     
@@ -348,19 +522,13 @@ class BaseCollector(ABC):
                 if isinstance(validated_value, list):
                     self.current_data['rr_intervals'] = validated_value
                     self.update_rr_metrics(validated_value)
-                    
-                    # Calculer la respiration
-                    breathing_rate = self._calculate_breathing_rate_from_rr(validated_value)
-                    if breathing_rate > 0:
-                        self.current_data['breathing_rate'] = breathing_rate
-                        self.update_breathing_metrics(breathing_rate)
             
             elif data_type == DataType.BATTERY_LEVEL:
                 self.current_data['battery_level'] = validated_value
             
             elif data_type == DataType.BREATHING_RATE:
                 self.current_data['breathing_rate'] = validated_value
-                self.update_breathing_metrics(validated_value)
+                # Pas de mise à jour ici car géré dans les sous-classes avec RSA
             
             # Métadonnées
             self.current_data['last_update'] = datetime.now().isoformat()
@@ -403,38 +571,6 @@ class BaseCollector(ABC):
         except:
             return None
     
-    def _calculate_breathing_rate_from_rr(self, rr_intervals: List[float]) -> float:
-        """Calcule la fréquence respiratoire à partir des RR"""
-        if len(rr_intervals) < 10:
-            return 0.0
-        
-        try:
-            recent_intervals = rr_intervals[-30:] if len(rr_intervals) >= 30 else rr_intervals
-            
-            mean_rr = sum(recent_intervals) / len(recent_intervals)
-            variance = sum((x - mean_rr) ** 2 for x in recent_intervals) / len(recent_intervals)
-            std_dev = variance ** 0.5
-            
-            if std_dev > 0 and mean_rr > 0:
-                bpm = 60000 / mean_rr
-                base_breathing_rate = 15.0
-                variability_factor = min(std_dev / mean_rr, 0.1)
-                
-                if bpm < 60:
-                    hr_factor = 0.9
-                elif bpm > 100:
-                    hr_factor = 1.2
-                else:
-                    hr_factor = 1.0
-                
-                breathing_rate = base_breathing_rate * hr_factor * (1 + variability_factor * 5)
-                
-                return max(8.0, min(25.0, breathing_rate))
-            
-            return 15.0
-        except:
-            return 0.0
-    
     # ===== MÉTRIQUES =====
     
     def get_real_time_metrics(self) -> Dict[str, Any]:
@@ -456,7 +592,7 @@ class BaseCollector(ABC):
             },
             'breathing_metrics': {
                 'frequency': round(self.breathing_metrics.frequency, 1),
-                'amplitude': round(self.breathing_metrics.amplitude, 1),
+                'amplitude': round(self.breathing_metrics.amplitude, 3),
                 'variability_percent': round(self.breathing_metrics.variability_percent, 1),
                 'quality': self.breathing_metrics.quality
             }
@@ -581,3 +717,49 @@ class BaseCollector(ABC):
             return age <= max_age_seconds
         except:
             return False
+
+
+class BaseCollectorWithRSA(BaseCollector):
+    """Extension de BaseCollector avec calcul RSA amélioré"""
+    
+    def __init__(self, device_address: str, device_type: str):
+        super().__init__(device_address, device_type)
+        
+        # Initialiser le calculateur RSA
+        self.rsa_calculator = RSABreathingCalculator()
+        
+        logger.info(f"BaseCollector avec RSA initialisé pour {device_type}")
+    
+    def update_rr_metrics(self, rr_intervals: List[float]):
+        """Met à jour les métriques RR et calcule la respiration RSA"""
+        # Appeler la méthode parent
+        super().update_rr_metrics(rr_intervals)
+        
+        # Ajouter au calculateur RSA
+        self.rsa_calculator.add_rr_intervals(rr_intervals)
+        
+        # Calculer les métriques de respiration
+        breathing_metrics = self.rsa_calculator.calculate_breathing_metrics()
+        
+        # Mettre à jour les métriques de respiration avec RSA
+        if breathing_metrics['rate'] > 0:
+            self.update_breathing_metrics(
+                breathing_rate=breathing_metrics['rate'],
+                amplitude=breathing_metrics['amplitude'],
+                quality=breathing_metrics['quality']
+            )
+            
+            # Ajouter le point de données
+            self.add_data_point(
+                DataType.BREATHING_RATE,
+                breathing_metrics['rate'],
+                quality=breathing_metrics['quality']
+            )
+    
+    async def cleanup(self):
+        """Nettoie les ressources incluant RSA"""
+        # Réinitialiser RSA
+        self.rsa_calculator.reset()
+        
+        # Appeler le nettoyage parent
+        await super().cleanup()

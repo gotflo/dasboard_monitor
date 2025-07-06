@@ -232,7 +232,7 @@ class NeurosityModule:
                 self.websocket_manager.broadcast(f'neurosity_brainwaves_raw_data', emit_data)
                 if self.is_recording:
                     self.data_manager.add_data_point('brainwaves_raw', data)
-        
+            
         except Exception as e:
             logger.error(f"Erreur traitement message: {e}")
             import traceback
@@ -583,7 +583,7 @@ def neurosity_process_wrapper(command_queue, data_queue, response_queue, env_pat
         return callback
     
     def brainwaves_callback(data):
-        """Traite les données d'ondes cérébrales"""
+        """Traite les données d'ondes cérébrales - VERSION MODIFIÉE"""
         try:
             if not data or 'data' not in data:
                 return
@@ -591,16 +591,19 @@ def neurosity_process_wrapper(command_queue, data_queue, response_queue, env_pat
             bands_data = data['data']
             result = {}
             
+            # Pour chaque bande d'ondes, conserver toutes les 8 valeurs
             for wave in ['delta', 'theta', 'alpha', 'beta', 'gamma']:
                 if wave in bands_data:
                     values = bands_data[wave]
-                    if isinstance(values, list) and values:
-                        valid_values = [v for v in values if isinstance(v, (int, float)) and v >= 0]
-                        result[wave] = round(sum(valid_values) / len(valid_values), 3) if valid_values else 0
+                    if isinstance(values, list) and len(values) == 8:
+                        # Conserver toutes les 8 valeurs (une par électrode)
+                        result[wave] = [round(v, 3) if isinstance(v, (int, float)) and v >= 0 else 0 for v in values]
                     else:
-                        result[wave] = 0
+                        # Si format incorrect, mettre 8 zéros
+                        result[wave] = [0] * 8
                 else:
-                    result[wave] = 0
+                    # Si pas de données pour cette bande, mettre 8 zéros
+                    result[wave] = [0] * 8
             
             result['timestamp'] = time.time() * 1000
             send_data('brainwaves', result)

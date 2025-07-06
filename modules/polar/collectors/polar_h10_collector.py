@@ -6,14 +6,15 @@ from typing import Dict, List, Optional, Any
 import bleak
 from bleak import BleakClient
 import threading
+import time
 
-from .base_collector import BaseCollector, DeviceStatus, DataType, DeviceInfo
+from .base_collector import BaseCollectorWithRSA, DeviceStatus, DataType, DeviceInfo
 
 logger = logging.getLogger(__name__)
 
 
-class PolarH10Collector(BaseCollector):
-    """Collecteur Polar H10 - Communication Bluetooth BLE"""
+class PolarH10Collector(BaseCollectorWithRSA):
+    """Collecteur Polar H10 avec calcul RSA intégré"""
     
     # UUIDs spécifiques au Polar H10
     HEART_RATE_SERVICE_UUID = "0000180d-0000-1000-8000-00805f9b34fb"
@@ -23,7 +24,9 @@ class PolarH10Collector(BaseCollector):
     DEVICE_INFORMATION_SERVICE_UUID = "0000180a-0000-1000-8000-00805f9b34fb"
     
     def __init__(self, device_address: str):
+        # Utiliser BaseCollectorWithRSA pour avoir le calcul RSA
         super().__init__(device_address, 'h10')
+        
         self.client = None
         
         # Stockage de l'ID formaté
@@ -31,20 +34,19 @@ class PolarH10Collector(BaseCollector):
         self.device_name = "Polar H10"
         self.connection_timestamp = None
         
-        # Buffer pour les intervalles RR
-        self.rr_buffer = []
-        self.max_rr_buffer_size = 100
+        # Buffer temporaire pour accumulation sur 1 seconde
+        self.temp_hr_buffer = []
+        self.temp_rr_buffer = []
+        self.last_data_processing = time.time()
         
-        # Gestion du BPM
-        self.last_bpm = 0
-        self.bpm_history = []
-        self.max_bpm_history = 10
+        # Task de traitement périodique
+        self.processing_task = None
         
         # Thread-safe data handling
         self._data_lock = threading.Lock()
         self._running = False
         
-        logger.info(f"Collecteur Polar H10 initialisé: {device_address}")
+        logger.info(f"Collecteur Polar H10 avec RSA initialisé: {device_address}")
     
     async def connect(self) -> bool:
         """Connecte au Polar H10"""
@@ -121,6 +123,30 @@ class PolarH10Collector(BaseCollector):
             except:
                 device_info_raw['model'] = "H10"
             
+            # Serial Number
+            try:
+                serial_data = await self.client.read_gatt_char("00002a25-0000-1000-8000-00805f9b34fb")
+                serial = serial_data.decode('utf-8').strip()
+                device_info_raw['serial'] = serial
+            except:
+                device_info_raw['serial'] = "Unknown"
+            
+            # Hardware Revision
+            try:
+                hw_data = await self.client.read_gatt_char("00002a27-0000-1000-8000-00805f9b34fb")
+                hw_revision = hw_data.decode('utf-8').strip()
+                device_info_raw['hw_revision'] = hw_revision
+            except:
+                device_info_raw['hw_revision'] = "Unknown"
+            
+            # Firmware Revision
+            try:
+                fw_data = await self.client.read_gatt_char("00002a26-0000-1000-8000-00805f9b34fb")
+                fw_revision = fw_data.decode('utf-8').strip()
+                device_info_raw['fw_revision'] = fw_revision
+            except:
+                device_info_raw['fw_revision'] = "Unknown"
+            
             # Créer l'objet DeviceInfo
             self.device_info = DeviceInfo(
                 device_id=self.device_address,
@@ -128,9 +154,9 @@ class PolarH10Collector(BaseCollector):
                 name=self.device_name,
                 manufacturer=device_info_raw.get('manufacturer', 'Polar'),
                 model=device_info_raw.get('model', 'H10'),
-                firmware_version="Unknown",
-                hardware_version="Unknown",
-                serial_number="Unknown",
+                firmware_version=device_info_raw.get('fw_revision', 'Unknown'),
+                hardware_version=device_info_raw.get('hw_revision', 'Unknown'),
+                serial_number=device_info_raw.get('serial', 'Unknown'),
                 last_seen=datetime.now()
             )
             
@@ -210,12 +236,12 @@ class PolarH10Collector(BaseCollector):
         self.client = None
     
     async def start_data_collection(self):
-        """Démarre la collecte de données"""
+        """Démarre la collecte avec traitement périodique RSA"""
         if not self.is_connected:
             raise Exception("Appareil non connecté")
         
         try:
-            logger.info("Démarrage collecte données H10")
+            logger.info("Démarrage collecte données H10 avec traitement RSA")
             
             # Créer un wrapper pour le callback qui vérifie si on est toujours actif
             def safe_notification_handler(sender: int, data: bytearray):
@@ -225,21 +251,36 @@ class PolarH10Collector(BaseCollector):
                     except Exception as e:
                         logger.error(f"Erreur dans le handler de notification: {e}")
             
+            # Démarrer les notifications BLE
             await self.client.start_notify(
                 self.HEART_RATE_MEASUREMENT_UUID,
                 safe_notification_handler
             )
             
             self.is_collecting = True
-            logger.info("Collecte données H10 démarrée")
+            
+            # Démarrer le traitement périodique (toutes les secondes)
+            self.processing_task = asyncio.create_task(self._periodic_data_processor())
+            
+            logger.info("Collecte données H10 démarrée avec processeur RSA")
         
         except Exception as e:
             logger.error(f"Erreur démarrage collecte H10: {e}")
             raise
     
     async def stop_data_collection(self):
-        """Arrête la collecte de données"""
+        """Arrête la collecte et le traitement"""
         try:
+            # Arrêter le traitement périodique
+            if self.processing_task:
+                self.processing_task.cancel()
+                try:
+                    await self.processing_task
+                except asyncio.CancelledError:
+                    pass
+                self.processing_task = None
+            
+            # Arrêter les notifications BLE
             if self.client and self.client.is_connected:
                 await self.client.stop_notify(self.HEART_RATE_MEASUREMENT_UUID)
             
@@ -250,7 +291,7 @@ class PolarH10Collector(BaseCollector):
             logger.error(f"Erreur arrêt collecte H10: {e}")
     
     def _heart_rate_notification_handler(self, sender: int, data: bytearray):
-        """Gestionnaire des notifications de fréquence cardiaque"""
+        """Handler optimisé pour accumulation des données"""
         try:
             if len(data) < 2:
                 return
@@ -268,23 +309,15 @@ class PolarH10Collector(BaseCollector):
                 heart_rate = data[1]
                 offset = 2
             
-            # Validation
-            if heart_rate < 30 or heart_rate > 250:
-                return
-            
-            # Mise à jour avec thread safety
-            with self._data_lock:
-                self.last_bpm = heart_rate
-                self.bpm_history.append(heart_rate)
-                if len(self.bpm_history) > self.max_bpm_history:
-                    self.bpm_history.pop(0)
-            
-            self.add_data_point(DataType.HEART_RATE, heart_rate, quality='good')
+            # Validation et accumulation thread-safe
+            if 30 <= heart_rate <= 250:
+                with self._data_lock:
+                    self.temp_hr_buffer.append(heart_rate)
             
             # Extraire les intervalles RR
-            rr_intervals = []
             if flags & 0x10 and offset < len(data):
                 i = offset
+                rr_intervals = []
                 while i < len(data) - 1:
                     try:
                         rr_interval = struct.unpack('<H', data[i:i + 2])[0]
@@ -299,30 +332,87 @@ class PolarH10Collector(BaseCollector):
                 
                 if rr_intervals:
                     with self._data_lock:
-                        self.rr_buffer.extend(rr_intervals)
-                        if len(self.rr_buffer) > self.max_rr_buffer_size:
-                            self.rr_buffer = self.rr_buffer[-self.max_rr_buffer_size:]
-                    
-                    self.add_data_point(DataType.RR_INTERVALS, self.rr_buffer.copy(), quality='good')
+                        self.temp_rr_buffer.extend(rr_intervals)
         
         except Exception as e:
-            logger.error(f"Erreur traitement données H10: {e}")
+            logger.error(f"Erreur traitement notification H10: {e}")
+    
+    async def _periodic_data_processor(self):
+        """Processeur qui traite les données accumulées toutes les secondes avec RSA"""
+        while self.is_collecting and self._running:
+            try:
+                await asyncio.sleep(1.0)  # Attendre 1 seconde
+                
+                current_time = time.time()
+                
+                # Copier et vider les buffers thread-safe
+                with self._data_lock:
+                    hr_data = self.temp_hr_buffer.copy()
+                    rr_data = self.temp_rr_buffer.copy()
+                    self.temp_hr_buffer.clear()
+                    self.temp_rr_buffer.clear()
+                
+                # Traiter HR (dernière valeur de la seconde)
+                if hr_data:
+                    last_hr = hr_data[-1]
+                    self.add_data_point(DataType.HEART_RATE, last_hr, quality='good')
+                
+                # Traiter RR (tous les intervalles de la seconde)
+                if rr_data:
+                    # Ajouter au calculateur RSA avec timestamp
+                    self.rsa_calculator.add_rr_intervals(rr_data, current_time)
+                    
+                    # Ajouter le point de données RR
+                    self.add_data_point(DataType.RR_INTERVALS, rr_data, quality='good')
+                    
+                    # Le calcul RSA se fait automatiquement dans update_rr_metrics
+                    # grâce à BaseCollectorWithRSA
+                
+                # Mettre à jour la batterie périodiquement (toutes les 30 secondes)
+                if int(current_time) % 30 == 0:
+                    asyncio.create_task(self._update_battery_level())
+                
+                # Log RSA si respiration détectée
+                if self.breathing_metrics.frequency > 0:
+                    logger.debug(f"H10 RSA: {self.breathing_metrics.frequency:.1f} rpm, "
+                                 f"amplitude: {self.breathing_metrics.amplitude:.3f}, "
+                                 f"qualité: {self.breathing_metrics.quality}")
+            
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Erreur dans le processeur périodique H10: {e}")
+    
+    async def _update_battery_level(self):
+        """Met à jour le niveau de batterie"""
+        try:
+            if self.client and self.client.is_connected:
+                battery_data = await self.client.read_gatt_char(self.BATTERY_LEVEL_UUID)
+                battery_level = int(battery_data[0])
+                self.add_data_point(DataType.BATTERY_LEVEL, battery_level)
+        except Exception as e:
+            logger.debug(f"Impossible de lire la batterie: {e}")
     
     async def get_latest_data(self) -> Dict:
-        """Récupère les dernières données"""
+        """Récupère les dernières données avec métriques RSA"""
         if not self.is_connected:
             return {}
         
-        data = self.current_data.copy()
+        # Obtenir les données de base
+        data = await super().get_latest_data()
+        
+        # Ajouter des informations spécifiques au H10
         data.update({
             'device_info': self.get_simple_device_info(),
             'formatted_device_id': self.formatted_device_id,
             'device_name': self.device_name,
-            'rr_buffer_size': len(self.rr_buffer),
-            'last_bpm': self.last_bpm,
-            'bpm_history': self.bpm_history.copy(),
-            'avg_bpm': sum(self.bpm_history) / len(self.bpm_history) if self.bpm_history else 0,
-            'connection_strength': 100 if self.is_connected else 0
+            'rsa_breathing': {
+                'rate_rpm': self.breathing_metrics.frequency,
+                'amplitude': self.breathing_metrics.amplitude,
+                'quality': self.breathing_metrics.quality,
+                'buffer_size': len(self.rsa_calculator.rr_buffer),
+                'window_seconds': self.rsa_calculator.breathing_window
+            }
         })
         
         return data
@@ -338,7 +428,35 @@ class PolarH10Collector(BaseCollector):
         except:
             return False
     
+    def get_average_bpm(self) -> float:
+        """Retourne le BPM moyen"""
+        if not self.bpm_buffer:
+            return 0.0
+        return sum(self.bpm_buffer) / len(self.bpm_buffer)
+    
+    def get_connection_quality(self) -> Dict[str, Any]:
+        """Retourne la qualité de connexion"""
+        return {
+            'is_connected': self.is_connected,
+            'is_collecting': self.is_collecting,
+            'bpm_data_rate': len(self.bpm_buffer),
+            'rr_data_rate': len(self.rr_buffer),
+            'rsa_status': {
+                'breathing_detected': self.breathing_metrics.frequency > 0,
+                'quality': self.breathing_metrics.quality,
+                'buffer_fullness': f"{(len(self.rsa_calculator.rr_buffer) / self.rsa_calculator.rr_buffer.maxlen * 100):.0f}%"
+            },
+            'last_update': self.current_data.get('last_update'),
+            'errors_count': self.connection_stats.get('errors_count', 0)
+        }
+    
     async def cleanup(self):
         """Nettoie les ressources"""
         await super().cleanup()
         self._running = False
+        
+        # Nettoyer les données spécifiques au H10
+        self.temp_hr_buffer.clear()
+        self.temp_rr_buffer.clear()
+        self.formatted_device_id = "Non connecté"
+        self.connection_timestamp = None

@@ -1,7 +1,7 @@
 /**
  * Module Polar - Gestion des capteurs cardiaques Polar H10 et Verity Sense
  * Interface JavaScript pour la connexion, monitoring et enregistrement des données
- * Version avec support de persistance pour le dashboard
+ * Version avec support CSV séparés et indicateurs RSA
  */
 
 class PolarModule {
@@ -28,12 +28,13 @@ class PolarModule {
             }
         };
 
-        // État de l'enregistrement
+        // État de l'enregistrement CSV
         this.recording = {
             isRecording: false,
             startTime: null,
             duration: 0,
-            interval: null
+            interval: null,
+            filenames: {}  // Stockage des noms de fichiers par appareil
         };
 
         // Configuration des graphiques
@@ -55,7 +56,6 @@ class PolarModule {
         // Vérifier si déjà initialisé
         if (this.isInitialized) {
             console.log('Module Polar déjà initialisé - réactivation');
-            // Ne pas réinitialiser les graphiques, juste réactiver
             if (this.wsClient && this.wsClient.isConnected) {
                 this.wsClient.emitToModule('polar', 'get_status', {});
             }
@@ -144,7 +144,6 @@ class PolarModule {
         const closeBtn = document.getElementById('polar_modalCloseBtn');
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
-                // Utiliser la version forcée
                 this.forceShowMonitoring();
             });
         }
@@ -154,7 +153,6 @@ class PolarModule {
         if (modal) {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
-                    // Utiliser la version forcée
                     this.forceShowMonitoring();
                 }
             });
@@ -375,7 +373,7 @@ class PolarModule {
         this.wsClient.on('verity_status', (data) => this.handleDeviceStatus('verity', data));
         this.wsClient.on('polar_status', (data) => this.handleGlobalStatus(data));
 
-        // CSV
+        // CSV - Nouveaux événements pour fichiers séparés
         this.wsClient.on('csv_recording_started', (data) => this.handleRecordingStarted(data));
         this.wsClient.on('csv_recording_stopped', (data) => this.handleRecordingStopped(data));
         this.wsClient.on('polar_csv_files', (data) => this.handleCSVFilesList(data));
@@ -554,9 +552,8 @@ class PolarModule {
             device_address: deviceAddress
         });
 
-        // Timeout de sécurité : si après 10 secondes on n'a pas de réponse, forcer la vérification
+        // Timeout de sécurité
         setTimeout(() => {
-            // Si on reçoit des données mais que la modal est toujours ouverte
             if (this.devices[deviceType].data && this.devices[deviceType].data.heart_rate > 0) {
                 const modal = document.getElementById('polar_connectionModal');
                 if (modal && modal.classList.contains('polar_active')) {
@@ -632,7 +629,7 @@ class PolarModule {
                 if (card) {
                     card.classList.remove('polar_active');
                     card.classList.add('polar_inactive');
-                    card.style.display = ''; // S'assurer que la carte est visible
+                    card.style.display = '';
                 }
 
                 // Overlay du graphique
@@ -648,7 +645,6 @@ class PolarModule {
             // Réinitialiser la grille en mode dual
             if (grid) {
                 grid.classList.remove('polar_single-device');
-                // Animation d'ouverture
                 setTimeout(() => {
                     grid.style.opacity = '1';
                     grid.style.transform = 'scale(1)';
@@ -748,7 +744,6 @@ class PolarModule {
         const connectionModal = document.getElementById('polar_connectionModal');
         if (connectionModal) {
             connectionModal.classList.remove('polar_active');
-            // Forcer le style pour être sûr
             connectionModal.style.display = 'none';
             connectionModal.style.opacity = '0';
             connectionModal.style.visibility = 'hidden';
@@ -789,9 +784,8 @@ class PolarModule {
      * Gère la connexion d'un appareil
      */
     handleDeviceConnected(deviceType, data) {
-        console.log(`${deviceType} connecté (événement direct):`, data);
+        console.log(`${deviceType} connecté:`, data);
 
-        // Si déjà marqué comme connecté, ne pas refaire
         if (this.devices[deviceType].connected) {
             console.log(`${deviceType} déjà marqué comme connecté`);
             return;
@@ -863,7 +857,7 @@ class PolarModule {
     }
 
     /**
-     * Met à jour les données d'un appareil dans l'UI
+     * Met à jour les données d'un appareil dans l'UI avec support RSA
      */
     updateDeviceData(deviceType, data) {
         const prefix = `polar_${deviceType}`;
@@ -908,7 +902,7 @@ class PolarModule {
             this.updateMetric(`${prefix}MinBPM`, metrics.bpm_metrics?.min_bpm);
             this.updateMetric(`${prefix}MaxBPM`, metrics.bpm_metrics?.max_bpm);
 
-            // Respiration
+            // Respiration avec données RSA
             this.updateMetric(`${prefix}BreathingFreq`, metrics.breathing_metrics?.frequency);
             this.updateMetric(`${prefix}BreathingAmp`, metrics.breathing_metrics?.amplitude);
 
@@ -916,7 +910,21 @@ class PolarModule {
             if (qualityEl && metrics.breathing_metrics?.quality) {
                 qualityEl.textContent = this.translateQuality(metrics.breathing_metrics.quality);
                 qualityEl.className = `polar_metric-value quality-${metrics.breathing_metrics.quality}`;
+
+                // Ajouter un indicateur visuel de la qualité RSA
+                if (metrics.breathing_metrics.quality === 'excellent') {
+                    qualityEl.innerHTML = qualityEl.textContent + ' <i class="fas fa-check-circle" style="color: #10b981; margin-left: 4px;"></i>';
+                } else if (metrics.breathing_metrics.quality === 'good') {
+                    qualityEl.innerHTML = qualityEl.textContent + ' <i class="fas fa-check" style="color: #3b82f6; margin-left: 4px;"></i>';
+                }
             }
+        }
+
+        // Afficher les infos RSA si disponibles
+        if (data.rsa_breathing) {
+            console.log(`🫁 RSA ${deviceType}: ${data.rsa_breathing.rate_rpm} rpm, ` +
+                        `amplitude: ${data.rsa_breathing.amplitude}, ` +
+                        `qualité: ${data.rsa_breathing.quality}`);
         }
     }
 
@@ -1045,7 +1053,7 @@ class PolarModule {
     }
 
     /**
-     * Gère le démarrage de l'enregistrement
+     * Gère le démarrage de l'enregistrement CSV avec fichiers séparés
      */
     handleRecordingStarted(data) {
         console.log('Enregistrement démarré:', data);
@@ -1053,6 +1061,9 @@ class PolarModule {
         this.recording.isRecording = true;
         this.recording.startTime = new Date(data.timestamp);
         this.recording.duration = 0;
+
+        // Stocker les noms de fichiers créés
+        this.recording.filenames = data.filenames || {};
 
         // Mettre à jour l'UI
         const recordBtn = document.getElementById('polar_recordToggleBtn');
@@ -1068,7 +1079,8 @@ class PolarModule {
             statusDot.classList.add('polar_recording');
         }
         if (statusText) {
-            statusText.textContent = 'Enregistrement...';
+            const deviceCount = Object.keys(this.recording.filenames).length;
+            statusText.textContent = `Enregistrement (${deviceCount} fichier${deviceCount > 1 ? 's' : ''})`;
         }
 
         // Afficher le timer
@@ -1083,11 +1095,21 @@ class PolarModule {
             this.updateRecordingTimer();
         }, 1000);
 
-        this.showToast('Enregistrement CSV démarré', 'success');
+        // Message toast avec les fichiers créés
+        let message = 'Enregistrement CSV démarré';
+        if (this.recording.filenames.h10 && this.recording.filenames.verity) {
+            message += ' (2 fichiers séparés)';
+        } else if (this.recording.filenames.h10) {
+            message += ' (H10 uniquement)';
+        } else if (this.recording.filenames.verity) {
+            message += ' (Verity uniquement)';
+        }
+
+        this.showToast(message, 'success');
     }
 
     /**
-     * Gère l'arrêt de l'enregistrement
+     * Gère l'arrêt de l'enregistrement CSV
      */
     handleRecordingStopped(data) {
         console.log('Enregistrement arrêté:', data);
@@ -1123,17 +1145,31 @@ class PolarModule {
             sessionInfo.classList.add('polar_hidden');
         }
 
-        // Afficher les stats
-        if (data.lines_written) {
-            this.showToast(
-                `Enregistrement terminé: ${data.lines_written} lignes écrites (${this.formatDuration(data.duration || this.recording.duration)})`,
-                'success'
-            );
+        // Afficher les stats par fichier
+        if (data.files) {
+            let totalLines = 0;
+            let filesCreated = [];
+
+            for (const [device, info] of Object.entries(data.files)) {
+                if (info.lines_written > 0) {
+                    filesCreated.push(`${device.toUpperCase()}: ${info.lines_written} lignes`);
+                    totalLines += info.lines_written;
+                }
+            }
+
+            if (filesCreated.length > 0) {
+                this.showToast(
+                    `Enregistrement terminé (${this.formatDuration(data.duration || this.recording.duration)})\n` +
+                    filesCreated.join(', '),
+                    'success'
+                );
+            }
         }
 
         // Réinitialiser
         this.recording.duration = 0;
         this.recording.startTime = null;
+        this.recording.filenames = {};
     }
 
     /**
@@ -1219,7 +1255,7 @@ class PolarModule {
     }
 
     /**
-     * Crée un élément de fichier
+     * Crée un élément de fichier avec indication du type de capteur
      */
     createFileItem(file) {
         const div = document.createElement('div');
@@ -1231,14 +1267,30 @@ class PolarModule {
             minute: '2-digit'
         });
 
+        // Icône selon le type de capteur
+        const deviceIcon = file.device_type === 'h10' ? 'fa-heartbeat' :
+                          file.device_type === 'verity' ? 'fa-user-clock' :
+                          'fa-file-csv';
+
+        const deviceLabel = file.device_type === 'h10' ? 'H10' :
+                           file.device_type === 'verity' ? 'Verity' :
+                           'CSV';
+
+        // Badge de couleur selon le type
+        const badgeClass = file.device_type === 'h10' ? 'h10' :
+                          file.device_type === 'verity' ? 'verity' :
+                          '';
+
         div.innerHTML = `
             <div class="polar_file-info">
-                <div class="polar_file-icon">
-                    <i class="fas fa-file-csv"></i>
+                <div class="polar_file-icon" title="${deviceLabel}">
+                    <i class="fas ${deviceIcon}"></i>
                 </div>
                 <div class="polar_file-details">
                     <div class="polar_file-name">${file.filename}</div>
                     <div class="polar_file-meta">
+                        <span class="polar_device-badge ${badgeClass}">${deviceLabel}</span>
+                        <span>•</span>
                         <span>${file.size_str}</span>
                         <span>•</span>
                         <span>${dateStr}</span>
@@ -1322,34 +1374,12 @@ class PolarModule {
             }
         }
 
-        // Réinitialiser les valeurs si déconnecté
-        if (!connected) {
-            const prefix = `polar_${deviceType}`;
-            const elements = [
-                'HeartRate', 'LastRR', 'MeanRR', 'RMSSD',
-                'MeanBPM', 'MinBPM', 'MaxBPM',
-                'BreathingFreq', 'BreathingAmp'
-            ];
-
-            elements.forEach(suffix => {
-                const el = document.getElementById(`${prefix}${suffix}`);
-                if (el) el.textContent = '--';
-            });
-
-            const zoneLabel = document.getElementById(`${prefix}ZoneLabel`);
-            if (zoneLabel) zoneLabel.textContent = 'En attente';
-
-            const qualityEl = document.getElementById(`${prefix}BreathingQuality`);
-            if (qualityEl) qualityEl.textContent = '--';
-        }
-
         // Mettre à jour l'UI globale immédiatement
         this.updateUI();
 
         // Si on passe en mode single device, forcer l'animation
         const connectedCount = Object.values(this.devices).filter(d => d.connected).length;
         if (connectedCount === 1 && connected) {
-            // Petit délai pour que la transition CSS s'applique
             setTimeout(() => {
                 const activeCard = document.querySelector('.polar_device-card.polar_active');
                 if (activeCard) {
@@ -1421,206 +1451,6 @@ class PolarModule {
                 }
             }
         }
-    }
-
-    /**
-     * Vérifie si tous les appareils détectés sont connectés
-     */
-    checkAllDevicesConnected() {
-        const modal = document.getElementById('polar_connectionModal');
-        console.log('Modal trouvée:', !!modal, 'Modal active:', modal?.classList.contains('polar_active'));
-
-        if (!modal || !modal.classList.contains('polar_active')) return;
-
-        const devices = modal.querySelectorAll('.polar_device-option');
-        console.log('Devices trouvés:', devices.length);
-
-        const connectedDevices = Array.from(devices).filter(device =>
-            device.classList.contains('polar_connected')
-        );
-        console.log('Devices connectés:', connectedDevices.length);
-
-        const allConnected = devices.length > 0 && devices.length === connectedDevices.length;
-        console.log('Tous connectés:', allConnected);
-
-        if (allConnected) {
-            console.log('Fermeture automatique de la modal dans 1.5s');
-            setTimeout(() => this.forceShowMonitoring(), 1500);
-        }
-    }
-
-    /**
-     * Ferme la modal de connexion (version forcée)
-     */
-    closeConnectionModal() {
-        console.log('Fermeture de la modal de connexion');
-
-        const modal = document.getElementById('polar_connectionModal');
-        if (modal) {
-            // Retirer toutes les classes et styles
-            modal.classList.remove('polar_active');
-            modal.style.display = 'none';
-            modal.style.opacity = '0';
-            modal.style.visibility = 'hidden';
-
-            // Nettoyer aussi l'overlay de chargement
-            this.hideLoading();
-        }
-    }
-
-    /**
-     * Réessaye la connexion
-     */
-    retryConnection() {
-        this.scanForDevices();
-    }
-
-    /**
-     * Réinitialise un graphique
-     */
-    resetChart(deviceType) {
-        const device = this.devices[deviceType];
-        if (device.chart) {
-            device.chartData = [];
-            device.chart.data.labels = [];
-            device.chart.data.datasets[0].data = [];
-            device.chart.update();
-
-            this.showToast(`Graphique ${deviceType.toUpperCase()} réinitialisé`, 'info');
-        }
-    }
-
-    /**
-     * Calcule la zone cardiaque
-     */
-    calculateHeartRateZone(hr) {
-        // Estimation basique (normalement basée sur l'âge et FCmax)
-        if (hr < 60) {
-            return { label: 'Repos', color: '#e0f2fe', textColor: '#0369a1' };
-        } else if (hr < 100) {
-            return { label: 'Légère', color: '#d1fae5', textColor: '#059669' };
-        } else if (hr < 140) {
-            return { label: 'Modérée', color: '#fed7aa', textColor: '#c2410c' };
-        } else if (hr < 170) {
-            return { label: 'Intense', color: '#fecaca', textColor: '#dc2626' };
-        } else {
-            return { label: 'Maximale', color: '#e0e7ff', textColor: '#4338ca' };
-        }
-    }
-
-    /**
-     * Formate l'ID d'un appareil
-     */
-    formatDeviceId(address) {
-        if (!address) return 'Unknown';
-
-        if (address.includes(':')) {
-            const parts = address.split(':');
-            return `${parts[parts.length-2]}:${parts[parts.length-1]}`;
-        }
-
-        return address.substring(address.length - 6);
-    }
-
-    /**
-     * Calcule la force du signal
-     */
-    calculateSignalStrength(rssi) {
-        // RSSI typique: -40 (excellent) à -90 (faible)
-        const strength = Math.max(0, Math.min(100, (rssi + 90) * 2));
-        return Math.round(strength);
-    }
-
-    /**
-     * Traduit la qualité
-     */
-    translateQuality(quality) {
-        const translations = {
-            'excellent': 'Excellent',
-            'good': 'Bon',
-            'fair': 'Moyen',
-            'poor': 'Faible',
-            'unknown': '--'
-        };
-        return translations[quality] || quality;
-    }
-
-    /**
-     * Formate une durée
-     */
-    formatDuration(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-
-    /**
-     * Affiche un toast
-     */
-    showToast(message, type = 'info') {
-        const container = document.getElementById('polar_toastContainer');
-        if (!container) return;
-
-        const toast = document.createElement('div');
-        toast.className = `polar_toast polar_${type}`;
-
-        const icon = type === 'success' ? 'fa-check-circle' :
-                     type === 'error' ? 'fa-exclamation-circle' :
-                     'fa-info-circle';
-
-        toast.innerHTML = `
-            <div class="polar_toast-icon">
-                <i class="fas ${icon}"></i>
-            </div>
-            <div class="polar_toast-content">
-                <div class="polar_toast-message">${message}</div>
-            </div>
-        `;
-
-        container.appendChild(toast);
-
-        // Animation d'entrée
-        setTimeout(() => toast.classList.add('polar_show'), 10);
-
-        // Suppression automatique
-        setTimeout(() => {
-            toast.classList.add('polar_removing');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
-
-    /**
-     * Affiche le chargement
-     */
-    showLoading(title = 'Chargement...', text = '') {
-        const overlay = document.getElementById('polar_loadingOverlay');
-        if (!overlay) return;
-
-        const titleEl = document.getElementById('polar_loadingTitle');
-        const textEl = document.getElementById('polar_loadingText');
-
-        if (titleEl) titleEl.textContent = title;
-        if (textEl) textEl.textContent = text;
-
-        overlay.classList.add('polar_active');
-    }
-
-    /**
-     * Cache le chargement
-     */
-    hideLoading() {
-        const overlay = document.getElementById('polar_loadingOverlay');
-        if (overlay) {
-            overlay.classList.remove('polar_active');
-        }
-    }
-
-    /**
-     * Gère les erreurs
-     */
-    handleError(data) {
-        console.error('Erreur Polar:', data);
-        this.showToast(data.error || 'Une erreur est survenue', 'error');
     }
 
     /**
@@ -1748,6 +1578,157 @@ class PolarModule {
                 }
             }
         }
+    }
+
+    /**
+     * Réinitialise un graphique
+     */
+    resetChart(deviceType) {
+        const device = this.devices[deviceType];
+        if (device.chart) {
+            device.chartData = [];
+            device.chart.data.labels = [];
+            device.chart.data.datasets[0].data = [];
+            device.chart.update();
+
+            this.showToast(`Graphique ${deviceType.toUpperCase()} réinitialisé`, 'info');
+        }
+    }
+
+    /**
+     * Calcule la zone cardiaque
+     */
+    calculateHeartRateZone(hr) {
+        // Estimation basique (normalement basée sur l'âge et FCmax)
+        if (hr < 60) {
+            return { label: 'Repos', color: '#e0f2fe', textColor: '#0369a1' };
+        } else if (hr < 100) {
+            return { label: 'Légère', color: '#d1fae5', textColor: '#059669' };
+        } else if (hr < 140) {
+            return { label: 'Modérée', color: '#fed7aa', textColor: '#c2410c' };
+        } else if (hr < 170) {
+            return { label: 'Intense', color: '#fecaca', textColor: '#dc2626' };
+        } else {
+            return { label: 'Maximale', color: '#e0e7ff', textColor: '#4338ca' };
+        }
+    }
+
+    /**
+     * Formate l'ID d'un appareil
+     */
+    formatDeviceId(address) {
+        if (!address) return 'Unknown';
+
+        if (address.includes(':')) {
+            const parts = address.split(':');
+            return `${parts[parts.length-2]}:${parts[parts.length-1]}`;
+        }
+
+        return address.substring(address.length - 6);
+    }
+
+    /**
+     * Calcule la force du signal
+     */
+    calculateSignalStrength(rssi) {
+        // RSSI typique: -40 (excellent) à -90 (faible)
+        const strength = Math.max(0, Math.min(100, (rssi + 90) * 2));
+        return Math.round(strength);
+    }
+
+    /**
+     * Traduit la qualité
+     */
+    translateQuality(quality) {
+        const translations = {
+            'excellent': 'Excellent',
+            'good': 'Bon',
+            'fair': 'Moyen',
+            'poor': 'Faible',
+            'unknown': '--',
+            'insufficient_data': 'Données insuffisantes',
+            'out_of_range': 'Hors plage',
+            'error': 'Erreur'
+        };
+        return translations[quality] || quality;
+    }
+
+    /**
+     * Formate une durée
+     */
+    formatDuration(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    /**
+     * Affiche un toast
+     */
+    showToast(message, type = 'info') {
+        const container = document.getElementById('polar_toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `polar_toast polar_${type}`;
+
+        const icon = type === 'success' ? 'fa-check-circle' :
+                     type === 'error' ? 'fa-exclamation-circle' :
+                     'fa-info-circle';
+
+        toast.innerHTML = `
+            <div class="polar_toast-icon">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="polar_toast-content">
+                <div class="polar_toast-message">${message}</div>
+            </div>
+        `;
+
+        container.appendChild(toast);
+
+        // Animation d'entrée
+        setTimeout(() => toast.classList.add('polar_show'), 10);
+
+        // Suppression automatique
+        setTimeout(() => {
+            toast.classList.add('polar_removing');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    /**
+     * Affiche le chargement
+     */
+    showLoading(title = 'Chargement...', text = '') {
+        const overlay = document.getElementById('polar_loadingOverlay');
+        if (!overlay) return;
+
+        const titleEl = document.getElementById('polar_loadingTitle');
+        const textEl = document.getElementById('polar_loadingText');
+
+        if (titleEl) titleEl.textContent = title;
+        if (textEl) textEl.textContent = text;
+
+        overlay.classList.add('polar_active');
+    }
+
+    /**
+     * Cache le chargement
+     */
+    hideLoading() {
+        const overlay = document.getElementById('polar_loadingOverlay');
+        if (overlay) {
+            overlay.classList.remove('polar_active');
+        }
+    }
+
+    /**
+     * Gère les erreurs
+     */
+    handleError(data) {
+        console.error('Erreur Polar:', data);
+        this.showToast(data.error || 'Une erreur est survenue', 'error');
     }
 
     /**

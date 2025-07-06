@@ -320,10 +320,27 @@ class Dashboard {
     }
 
     async loadModuleScript(scriptUrl, moduleName) {
-        // Éviter de recharger les scripts des modules persistants
+        // FIX: Éviter le double chargement des scripts
         if (this.loadedScripts.has(scriptUrl)) {
             console.log(`Script déjà chargé: ${scriptUrl}`);
-            this.initializeModule(moduleName);
+
+            // Pour le module Polar, vérifier si l'instance existe déjà
+            if (moduleName === 'polar' && window.polarModuleInstance) {
+                console.log('Instance Polar existante, réinitialisation...');
+                window.polarModuleInstance.init();
+                this.moduleInstances.set(moduleName, window.polarModuleInstance);
+            } else {
+                this.initializeModule(moduleName);
+            }
+            return;
+        }
+
+        // FIX: Vérifier l'instance globale avant de charger le script
+        if (moduleName === 'polar' && window.polarModuleInstance) {
+            console.log('Module Polar déjà chargé globalement');
+            this.loadedScripts.add(scriptUrl);
+            window.polarModuleInstance.init();
+            this.moduleInstances.set(moduleName, window.polarModuleInstance);
             return;
         }
 
@@ -368,6 +385,14 @@ class Dashboard {
         };
 
         const initFn = initFunctions[moduleName];
+
+        // FIX: Pour Polar, vérifier d'abord l'instance existante
+        if (moduleName === 'polar' && window.polarModuleInstance) {
+            console.log('Utilisation de l\'instance Polar existante');
+            this.moduleInstances.set(moduleName, window.polarModuleInstance);
+            return;
+        }
+
         if (initFn && window[initFn]) {
             try {
                 const instance = window[initFn]();
@@ -407,7 +432,11 @@ class Dashboard {
             instance.cleanup();
             console.log(`Module ${this.currentModule} nettoyé`);
         }
-        this.moduleInstances.delete(this.currentModule);
+
+        // Ne pas supprimer l'instance si c'est un module persistant
+        if (!this.persistentModules.has(this.currentModule)) {
+            this.moduleInstances.delete(this.currentModule);
+        }
     }
 
     async loadModuleTemplate(moduleName) {

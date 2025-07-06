@@ -426,9 +426,18 @@
         handleBrainwavesData(data) {
             if (!this.isConnected || !this.charts.brainwaves) return;
 
-            const powerData = ['delta', 'theta', 'alpha', 'beta', 'gamma'].map(
-                wave => Math.min(data[wave] || 0, 20)
-            );
+            // Calculer la moyenne de chaque bande à partir des 8 valeurs
+            const powerData = ['delta', 'theta', 'alpha', 'beta', 'gamma'].map(wave => {
+                if (data[wave] && Array.isArray(data[wave]) && data[wave].length === 8) {
+                    // Calculer la moyenne des 8 électrodes
+                    const sum = data[wave].reduce((acc, val) => acc + val, 0);
+                    const average = sum / data[wave].length;
+                    return Math.min(average, 20);
+                } else {
+                    // Ancienne méthode si les données sont dans l'ancien format
+                    return Math.min(data[wave] || 0, 20);
+                }
+            });
 
             this.charts.brainwaves.data.datasets[0].data = powerData;
             this.charts.brainwaves.update('none');
@@ -439,6 +448,17 @@
             }
 
             this.flashIndicator('brainwaves');
+
+            // Optionnel : Logger les valeurs détaillées pour debug
+            if (window.DEV_MODE) {
+                console.log('Brainwaves data par électrode:', {
+                    delta: data.delta,
+                    theta: data.theta,
+                    alpha: data.alpha,
+                    beta: data.beta,
+                    gamma: data.gamma
+                });
+            }
         }
 
         handleSignalQualityData(data) {
