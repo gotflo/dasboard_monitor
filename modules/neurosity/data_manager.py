@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DataManager optimisé pour le module Neurosity du Dashboard
+DataManager optimisé pour le module Neurosity du Base
 Gestion des données CSV avec EEG brut et système de buffer
 Version avec 8 valeurs par bande d'ondes cérébrales
 """

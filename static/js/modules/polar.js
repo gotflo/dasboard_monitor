@@ -2,6 +2,7 @@
  * Module Polar - Gestion des capteurs cardiaques Polar H10 et Verity Sense
  * Interface JavaScript pour la connexion, monitoring et enregistrement des données
  * Version avec support CSV séparés et indicateurs RSA
+ * Intégration Base Home
  */
 
 class PolarModule {
@@ -45,6 +46,22 @@ class PolarModule {
 
         // Timer pour mise à jour
         this.updateTimer = null;
+
+        // AJOUT: Intervalle pour dashboard
+        this.dashboardUpdateInterval = null;
+
+        // AJOUT: Métriques BPM pour le dashboard
+        this.bpm_metrics = {
+            min_bpm: 0,
+            max_bpm: 0,
+            mean_bpm: 0
+        };
+
+        // AJOUT: Métriques CSV pour le dashboard
+        this.csv_lines_written = {
+            h10: 0,
+            verity: 0
+        };
     }
 
     /**
@@ -94,6 +111,13 @@ class PolarModule {
         if (this.wsClient.isConnected) {
             this.wsClient.emitToModule('polar', 'get_status', {});
         }
+
+        // AJOUT: Mise à jour périodique pour le dashboard
+        this.dashboardUpdateInterval = setInterval(() => {
+            if (this.isInitialized && (this.devices.h10.connected || this.devices.verity.connected)) {
+                this.getDashboardSummary();
+            }
+        }, 1000);
 
         this.isInitialized = true;
         console.log('Module Polar initialisé');
@@ -854,6 +878,29 @@ class PolarModule {
         if (this.devices.h10.connected && this.devices.verity.connected) {
             this.updateComparison();
         }
+
+        // AJOUT: Émettre vers le dashboard
+        if (this.wsClient && this.wsClient.isConnected) {
+            this.wsClient.emit('polar_data_for_dashboard', {
+                device_type: deviceType,
+                device_data: data,
+                summary: {
+                    heart_rate: data.data?.heart_rate || 0,
+                    rr_last: data.data?.real_time_metrics?.rr_metrics?.last_rr || 0,
+                    rr_mean: data.data?.real_time_metrics?.rr_metrics?.mean_rr || 0,
+                    rmssd: data.data?.real_time_metrics?.rr_metrics?.rmssd || 0,
+                    breathing_rate: data.data?.real_time_metrics?.breathing_metrics?.frequency || 0,
+                    breathing_quality: data.data?.real_time_metrics?.breathing_metrics?.quality || 'unknown',
+                    battery_level: data.data?.battery_level || 0
+                },
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        // AJOUT: Mettre à jour les métriques BPM
+        if (data.data?.real_time_metrics?.bpm_metrics) {
+            this.bpm_metrics = data.data.real_time_metrics.bpm_metrics;
+        }
     }
 
     /**
@@ -1065,6 +1112,10 @@ class PolarModule {
         // Stocker les noms de fichiers créés
         this.recording.filenames = data.filenames || {};
 
+        // AJOUT: Réinitialiser les compteurs
+        this.csv_lines_written.h10 = 0;
+        this.csv_lines_written.verity = 0;
+
         // Mettre à jour l'UI
         const recordBtn = document.getElementById('polar_recordToggleBtn');
         if (recordBtn) {
@@ -1106,6 +1157,15 @@ class PolarModule {
         }
 
         this.showToast(message, 'success');
+
+        // AJOUT: Notifier le dashboard
+        if (this.wsClient && this.wsClient.isConnected) {
+            this.wsClient.emit('dashboard_recording_started', {
+                filenames: data.filenames,
+                devices_recording: Object.keys(data.filenames || {}),
+                timestamp: data.timestamp
+            });
+        }
     }
 
     /**
@@ -1154,6 +1214,9 @@ class PolarModule {
                 if (info.lines_written > 0) {
                     filesCreated.push(`${device.toUpperCase()}: ${info.lines_written} lignes`);
                     totalLines += info.lines_written;
+
+                    // AJOUT: Mettre à jour les compteurs
+                    this.csv_lines_written[device] = info.lines_written;
                 }
             }
 
@@ -1164,6 +1227,17 @@ class PolarModule {
                     'success'
                 );
             }
+        }
+
+        // AJOUT: Notifier le dashboard
+        if (this.wsClient && this.wsClient.isConnected) {
+            this.wsClient.emit('dashboard_recording_stopped', {
+                files: data.files,
+                duration: data.duration,
+                total_lines: Object.values(data.files || {}).reduce((sum, file) => sum + file.lines_written, 0),
+                download_available: true,
+                timestamp: new Date().toISOString()
+            });
         }
 
         // Réinitialiser
@@ -1731,6 +1805,87 @@ class PolarModule {
         this.showToast(data.error || 'Une erreur est survenue', 'error');
     }
 
+    // AJOUT: Méthode pour obtenir un résumé pour le dashboard
+    getDashboardSummary() {
+        const summary = {
+            devices: {
+                h10: {
+                    connected: this.devices.h10.connected,
+                    name: this.devices.h10.connected ? 'Polar H10' : 'Non connecté',
+                    data: this.devices.h10.data ? {
+                        heart_rate: this.devices.h10.data.heart_rate,
+                        battery: this.devices.h10.data.battery_level,
+                        metrics: this.devices.h10.data.real_time_metrics
+                    } : null
+                },
+                verity: {
+                    connected: this.devices.verity.connected,
+                    name: this.devices.verity.connected ? 'Polar Verity Sense' : 'Non connecté',
+                    data: this.devices.verity.data ? {
+                        heart_rate: this.devices.verity.data.heart_rate,
+                        battery: this.devices.verity.data.battery_level,
+                        metrics: this.devices.verity.data.real_time_metrics
+                    } : null
+                }
+            },
+            recording: {
+                active: this.recording.isRecording,
+                duration: this.recording.duration,
+                lines_written: this.recording.isRecording ?
+                    this.csv_lines_written.h10 + this.csv_lines_written.verity : 0
+            },
+            timestamp: new Date().toISOString()
+        };
+
+        // Émettre automatiquement vers le dashboard
+        if (this.wsClient && this.wsClient.isConnected) {
+            this.wsClient.emit('polar_dashboard_summary', summary);
+        }
+
+        return summary;
+    }
+
+    // AJOUT: Méthode pour obtenir les données formatées pour le dashboard
+    getFormattedDataForDashboard() {
+        // Prioriser H10 si les deux sont connectés
+        const activeDevice = this.devices.h10.connected ? 'h10' :
+                            this.devices.verity.connected ? 'verity' : null;
+
+        if (!activeDevice) {
+            return null;
+        }
+
+        const deviceData = this.devices[activeDevice].data;
+        if (!deviceData) {
+            return null;
+        }
+
+        return {
+            source: activeDevice.toUpperCase(),
+            heart_rate: {
+                current: deviceData.heart_rate || 0,
+                min: this.bpm_metrics?.min_bpm || 0,
+                max: this.bpm_metrics?.max_bpm || 0,
+                mean: this.bpm_metrics?.mean_bpm || 0
+            },
+            rr_intervals: {
+                last: deviceData.real_time_metrics?.rr_metrics?.last_rr || 0,
+                mean: deviceData.real_time_metrics?.rr_metrics?.mean_rr || 0,
+                rmssd: deviceData.real_time_metrics?.rr_metrics?.rmssd || 0
+            },
+            breathing: {
+                rate: deviceData.real_time_metrics?.breathing_metrics?.frequency || 0,
+                amplitude: deviceData.real_time_metrics?.breathing_metrics?.amplitude || 0,
+                quality: deviceData.real_time_metrics?.breathing_metrics?.quality || 'unknown'
+            },
+            device_info: {
+                battery: deviceData.battery_level || 0,
+                connection_quality: deviceData.data_quality || 'unknown'
+            },
+            timestamp: new Date().toISOString()
+        };
+    }
+
     /**
      * Nettoyage du module
      */
@@ -1752,6 +1907,13 @@ class PolarModule {
                 clearInterval(this.recording.interval);
                 this.recording.interval = null;
             }
+
+            // AJOUT: Nettoyer l'intervalle dashboard
+            if (this.dashboardUpdateInterval) {
+                clearInterval(this.dashboardUpdateInterval);
+                this.dashboardUpdateInterval = null;
+            }
+
             return;
         }
 
@@ -1765,6 +1927,12 @@ class PolarModule {
         if (this.recording.interval) {
             clearInterval(this.recording.interval);
             this.recording.interval = null;
+        }
+
+        // AJOUT: Nettoyer l'intervalle dashboard
+        if (this.dashboardUpdateInterval) {
+            clearInterval(this.dashboardUpdateInterval);
+            this.dashboardUpdateInterval = null;
         }
 
         // Réinitialiser l'interface si des appareils sont connectés

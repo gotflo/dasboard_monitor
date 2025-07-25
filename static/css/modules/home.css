@@ -1,0 +1,1236 @@
+/* Module Home - Styles complets refactorisés avec Gazepoint */
+
+/* Variables */
+:root {
+    --dh-primary: #667eea;
+    --dh-secondary: #764ba2;
+    --dh-success: #10b981;
+    --dh-danger: #ef4444;
+    --dh-warning: #f59e0b;
+    --dh-info: #3b82f6;
+    
+    --dh-bg: #f8f9fa;
+    --dh-card-bg: #ffffff;
+    --dh-text: #1f2937;
+    --dh-text-muted: #6b7280;
+    --dh-text-light: #9ca3af;
+    --dh-border: #e5e7eb;
+    
+    --dh-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --dh-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --dh-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    
+    --dh-transition: all 0.3s ease;
+}
+
+/* Container principal */
+.home-container {
+    width: 100%;
+    height: 100vh;
+    background: var(--dh-bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* === NAVBAR === */
+.dh-navbar {
+    background: var(--dh-card-bg);
+    border-bottom: 1px solid var(--dh-border);
+    padding: 1rem 2rem;
+    flex-shrink: 0;
+    box-shadow: var(--dh-shadow-sm);
+}
+
+.dh-navbar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.dh-navbar-left {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+}
+
+.dh-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--dh-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dh-title i {
+    color: var(--dh-primary);
+}
+
+.dh-subtitle {
+    font-size: 0.875rem;
+    color: var(--dh-text-muted);
+    font-weight: 400;
+}
+
+.dh-navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* Éléments navbar */
+.dh-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #f3f4f6;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+}
+
+.dh-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--dh-success);
+    animation: pulse-dot 2s infinite;
+}
+
+.dh-status-dot.recording {
+    background: var(--dh-danger);
+    animation: pulse-dot 1s infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.dh-collect-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--dh-primary);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--dh-transition);
+}
+
+.dh-collect-btn:hover {
+    background: var(--dh-secondary);
+    transform: translateY(-1px);
+    box-shadow: var(--dh-shadow);
+}
+
+.dh-collect-btn.collecting {
+    background: var(--dh-danger);
+}
+
+.dh-session-timer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #fef3c7;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #92400e;
+}
+
+.dh-monitoring-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: var(--dh-transition);
+}
+
+.dh-monitoring-badge.live {
+    animation: badge-pulse 2s infinite;
+}
+
+@keyframes badge-pulse {
+    0%, 100% { background: #dcfce7; }
+    50% { background: #bbf7d0; }
+}
+
+.dh-config-menu {
+    position: relative;
+}
+
+.dh-config-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 0.5rem;
+    color: var(--dh-text-muted);
+    cursor: pointer;
+    transition: var(--dh-transition);
+}
+
+.dh-config-btn:hover {
+    background: #e5e7eb;
+    color: var(--dh-text);
+}
+
+.dh-config-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: var(--dh-card-bg);
+    border: 1px solid var(--dh-border);
+    border-radius: 0.5rem;
+    box-shadow: var(--dh-shadow-lg);
+    min-width: 280px;
+    z-index: 100;
+}
+
+.dh-config-item {
+    padding: 1rem;
+}
+
+.dh-config-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+/* === CONTENU PRINCIPAL === */
+.dh-main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 2rem;
+}
+
+/* Bannière */
+.dh-connection-banner {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 0.75rem;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.dh-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: #92400e;
+}
+
+.dh-banner-content i {
+    font-size: 1.25rem;
+    color: #f59e0b;
+}
+
+/* === CARTES COMPACTES === */
+.dh-cards-row {
+    display: flex;
+    gap: 1.5rem;
+    max-width: 1600px;
+    margin: 0 auto 1.5rem;
+    flex-wrap: wrap;
+}
+
+/* Première rangée - 3 cartes */
+.dh-cards-row-top {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+/* Deuxième rangée - Gazepoint centré */
+.dh-cards-row-bottom {
+    display: flex;
+    justify-content: center;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.dh-cards-row-bottom .dh-card-minimal {
+    max-width: 500px;
+    width: 100%;
+}
+
+/* Effet spécial pour la carte Gazepoint centrée */
+.dh-cards-row-bottom .dh-card-minimal:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.dh-card-minimal {
+    flex: 1;
+    min-width: 320px;
+    background: var(--dh-card-bg);
+    border-radius: 0.75rem;
+    box-shadow: var(--dh-shadow);
+    overflow: hidden;
+    transition: var(--dh-transition);
+}
+
+.dh-card-minimal:hover {
+    box-shadow: var(--dh-shadow-lg);
+    transform: translateY(-1px);
+}
+
+/* En-tête de carte */
+.dh-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(to bottom, #fafbfc, #ffffff);
+    border-bottom: 1px solid var(--dh-border);
+}
+
+.dh-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dh-text);
+    margin: 0;
+}
+
+.dh-card-title i {
+    color: var(--dh-primary);
+}
+
+.dh-status-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+}
+
+.status-text {
+    color: var(--dh-text-muted);
+}
+
+/* Corps de carte */
+.dh-card-main {
+    padding: 1.25rem;
+}
+
+/* === CARTE POLAR === */
+.dh-bpm-section {
+    margin-bottom: 1rem;
+}
+
+.dh-bpm-display {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.dh-large-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--dh-danger);
+    line-height: 1;
+}
+
+.dh-large-unit {
+    font-size: 1rem;
+    color: var(--dh-text-muted);
+    font-weight: 500;
+}
+
+.dh-beat-icon {
+    color: var(--dh-danger);
+    font-size: 1.25rem;
+    margin-left: 0.5rem;
+}
+
+.dh-bpm-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8125rem;
+    color: var(--dh-text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.dh-bpm-stats strong {
+    color: var(--dh-text);
+    font-weight: 600;
+}
+
+.dh-mini-chart {
+    width: 100%;
+    height: 60px !important;
+}
+
+/* Ligne de données */
+.dh-data-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f3f4f6;
+}
+
+.dh-data-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.dh-metric-header {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--dh-text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.dh-metric-header i {
+    color: var(--dh-primary);
+    font-size: 0.875rem;
+}
+
+.dh-data-value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--dh-text);
+}
+
+.dh-data-sub {
+    font-size: 0.75rem;
+    color: var(--dh-text-muted);
+}
+
+.dh-data-separator {
+    width: 1px;
+    height: 2rem;
+    background: var(--dh-border);
+}
+
+/* === CARTE NEUROSITY === */
+
+/* Indicateur de batterie */
+.battery-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--dh-text-muted);
+}
+
+.battery-indicator i {
+    font-size: 0.875rem;
+}
+
+.battery-level {
+    font-weight: 600;
+    color: var(--dh-text);
+}
+
+/* Métriques avec cercles */
+.dh-neuro-metrics {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    justify-content: center;
+}
+
+.dh-metric-circle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dh-circle-progress {
+    width: 80px;
+    height: 80px;
+    position: relative;
+}
+
+.dh-circle-progress svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.circle-bg {
+    fill: none;
+    stroke: #e5e7eb;
+    stroke-width: 6;
+}
+
+.circle-progress {
+    fill: none;
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.calm-progress {
+    stroke: #6366f1;
+}
+
+.focus-progress {
+    stroke: #f59e0b;
+}
+
+.circle-text {
+    transform: rotate(90deg);
+    transform-origin: center;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    fill: var(--dh-text);
+}
+
+.circle-text .value {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.circle-text .unit {
+    font-size: 12px;
+    font-weight: 500;
+    fill: var(--dh-text-muted);
+}
+
+.dh-metric-label {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--dh-text);
+}
+
+.dh-metric-label i {
+    font-size: 0.875rem;
+}
+
+/* Section ondes cérébrales */
+.dh-brainwaves-section {
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.dh-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--dh-text);
+}
+
+.dh-section-header i {
+    color: #8b5cf6;
+}
+
+.dh-live-indicator {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--dh-success);
+    font-weight: 500;
+}
+
+.live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--dh-success);
+    border-radius: 50%;
+    animation: live-pulse 2s infinite;
+}
+
+@keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.dh-brainwaves-chart {
+    width: 100%;
+    height: 120px !important;
+    margin-bottom: 0.75rem;
+}
+
+/* Légende des ondes */
+.dh-brainwaves-legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 1rem;
+    font-size: 0.75rem;
+    color: var(--dh-text-muted);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.legend-color.delta { background: #6366f1; }
+.legend-color.theta { background: #f59e0b; }
+.legend-color.alpha { background: #3b82f6; }
+.legend-color.beta { background: #10b981; }
+.legend-color.gamma { background: #ec4899; }
+
+/* === CARTE THERMAL === */
+
+/* Section thermique principale */
+.dh-thermal-section {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Conteneur de l'image du visage */
+.dh-thermal-face {
+    flex: 1;
+}
+
+.dh-face-image-container {
+    position: relative;
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto;
+}
+
+/* Image du visage */
+.dh-face-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: grayscale(100%) opacity(0.7);
+    transition: filter 0.3s ease;
+}
+
+/* Animation au survol */
+.dh-thermal-card:hover .dh-face-image {
+    filter: grayscale(50%) opacity(0.85);
+}
+
+/* Wrapper pour chaque point thermique */
+.thermal-point-wrapper {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    z-index: 10;
+}
+
+/* Points thermiques */
+.thermal-point {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+/* Animation pulsation pour les points */
+.thermal-point::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: inherit;
+    opacity: 0;
+    animation: thermal-pulse 2s infinite;
+}
+
+@keyframes thermal-pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.6;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* Couleurs des points selon la température */
+.thermal-point.hot {
+    background: #ef4444;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+}
+
+.thermal-point.warm {
+    background: #f59e0b;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+}
+
+.thermal-point.normal {
+    background: #10b981;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+}
+
+.thermal-point.cool {
+    background: #3b82f6;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
+}
+
+/* Labels de température */
+.thermal-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--dh-text);
+    padding: 3px 6px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+    margin-top: 4px;
+}
+
+/* Effet hover sur les points */
+.thermal-point:hover {
+    transform: scale(1.3);
+    z-index: 11;
+}
+
+.thermal-point:hover + .thermal-label {
+    background: var(--dh-primary);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Statistiques thermiques */
+.dh-thermal-stats {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.dh-thermal-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--dh-text-muted);
+    min-width: 2rem;
+}
+
+.stat-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dh-text);
+}
+
+/* Section graphique thermal */
+.dh-thermal-chart-section {
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.dh-thermal-chart-section .dh-section-header i {
+    color: #ef4444;
+}
+
+.dh-thermal-chart {
+    width: 100%;
+    height: 150px !important;
+}
+
+/* === CARTE GAZEPOINT === */
+
+/* Section des yeux */
+.dh-eyes-section {
+    margin-bottom: 1.5rem;
+}
+
+.dh-eyes-display {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.dh-eye-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dh-eye-svg {
+    width: 80px;
+    height: 60px;
+    transition: var(--dh-transition);
+}
+
+.dh-eye-shape {
+    transition: var(--dh-transition);
+}
+
+.dh-eye-iris {
+    transition: all 0.2s ease;
+}
+
+.dh-eye-pupil {
+    transition: all 0.15s ease;
+}
+
+.dh-eye-lid {
+    transition: opacity 0.2s ease;
+}
+
+/* Animation clignement */
+@keyframes blink {
+    0%, 90%, 100% { opacity: 0; }
+    95% { opacity: 1; }
+}
+
+.dh-eye-lid.blinking {
+    animation: blink 4s infinite;
+}
+
+.dh-eye-label {
+    font-size: 0.75rem;
+    color: var(--dh-text-muted);
+    font-weight: 500;
+}
+
+/* Métriques des pupilles */
+.dh-pupil-metrics {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+}
+
+.dh-pupil-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: var(--dh-text-muted);
+}
+
+.metric-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dh-text);
+}
+
+/* Section du regard */
+.dh-gaze-section {
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.dh-gaze-section .dh-section-header i {
+    color: var(--dh-primary);
+}
+
+.dh-gaze-canvas-container {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    background: white;
+    border: 1px solid var(--dh-border);
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+}
+
+.dh-gaze-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.dh-gaze-point {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.8) 0%, transparent 70%);
+    border: 2px solid var(--dh-primary);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: all 0.1s ease;
+    opacity: 0;
+}
+
+.dh-gaze-point.active {
+    opacity: 1;
+}
+
+/* Effet de traînée pour le regard */
+.dh-gaze-point::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: gaze-pulse 1s infinite;
+}
+
+@keyframes gaze-pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* Coordonnées du regard */
+.dh-gaze-coords {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    font-size: 0.8125rem;
+    color: var(--dh-text-muted);
+}
+
+.dh-gaze-coords strong {
+    color: var(--dh-text);
+    font-weight: 600;
+}
+
+/* === STATUT DES APPAREILS === */
+.device-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    transition: var(--dh-transition);
+}
+
+.device-indicator.online {
+    background: var(--dh-success);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.device-indicator.offline {
+    background: #d1d5db;
+}
+
+/* === BADGES ET QUALITÉ === */
+.quality-badge {
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.quality-badge.quality-excellent {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.quality-badge.quality-good {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.quality-badge.quality-fair {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.quality-badge.quality-poor {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* === ANIMATIONS === */
+.dh-card-minimal.pulse {
+    animation: card-pulse 0.6s ease;
+}
+
+@keyframes card-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.01); }
+}
+
+.dh-metric-circle.updating {
+    animation: metric-pulse 0.3s ease;
+}
+
+@keyframes metric-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* === NOTIFICATIONS === */
+.dh-notifications {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dh-notification {
+    background: var(--dh-card-bg);
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--dh-shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 300px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: var(--dh-transition);
+}
+
+.dh-notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.dh-notification.success {
+    border-left: 4px solid var(--dh-success);
+}
+
+.dh-notification.error {
+    border-left: 4px solid var(--dh-danger);
+}
+
+.dh-notification.info {
+    border-left: 4px solid var(--dh-info);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1600px) {
+    .dh-cards-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 1200px) {
+    .dh-cards-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .dh-navbar {
+        padding: 1rem;
+    }
+    
+    .dh-navbar-content {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .dh-navbar-left {
+        width: 100%;
+    }
+    
+    .dh-navbar-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .dh-main-content {
+        padding: 1rem;
+    }
+    
+    .dh-card-main {
+        padding: 1rem;
+    }
+    
+    .dh-large-value {
+        font-size: 2rem;
+    }
+    
+    .dh-data-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .dh-data-separator {
+        display: none;
+    }
+    
+    /* Neurosity responsive */
+    .dh-neuro-metrics {
+        gap: 1rem;
+    }
+    
+    .dh-circle-progress {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .circle-text .value {
+        font-size: 20px;
+    }
+    
+    .dh-brainwaves-legend {
+        grid-template-columns: 1fr;
+        gap: 0.375rem;
+    }
+    
+    /* Thermal responsive */
+    .dh-thermal-section {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .dh-face-image-container {
+        max-width: 150px;
+    }
+    
+    .thermal-point {
+        width: 12px;
+        height: 12px;
+    }
+    
+    .thermal-label {
+        font-size: 10px;
+        padding: 2px 4px;
+    }
+    
+    .dh-thermal-stats {
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-around;
+    }
+    
+    /* Gazepoint responsive */
+    .dh-eyes-display {
+        gap: 1rem;
+    }
+    
+    .dh-eye-svg {
+        width: 60px;
+        height: 45px;
+    }
+    
+    .dh-pupil-metrics {
+        gap: 1rem;
+    }
+    
+    .dh-gaze-canvas-container {
+        height: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dh-collect-btn span {
+        display: none;
+    }
+    
+    .dh-collect-btn {
+        padding: 0.75rem;
+    }
+    
+    .dh-card-top {
+        padding: 0.875rem 1rem;
+    }
+    
+    .dh-card-title {
+        font-size: 0.9375rem;
+    }
+    
+    .dh-large-value {
+        font-size: 1.75rem;
+    }
+    
+    /* Neurosity mobile */
+    .dh-metric-circle {
+        gap: 0.375rem;
+    }
+    
+    .dh-circle-progress {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .circle-text .value {
+        font-size: 18px;
+    }
+    
+    .dh-metric-label {
+        font-size: 0.8125rem;
+    }
+    
+    /* Gazepoint mobile */
+    .dh-eyes-display {
+        gap: 0.5rem;
+    }
+    
+    .dh-eye-svg {
+        width: 50px;
+        height: 40px;
+    }
+    
+    .dh-gaze-coords {
+        gap: 0.75rem;
+        font-size: 0.75rem;
+    }
+}

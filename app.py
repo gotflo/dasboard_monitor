@@ -42,12 +42,14 @@ thought_capture_module = None
 thermal_module = None
 polar_module = None
 neurosity_module = None
+gazepoint_module = None
+dashboard_home_module = None  # AJOUT: Variable pour dashboard
 module_registry = None
 
 
 def init_modules():
     """Initialise tous les modules - appelé seulement dans le main"""
-    global thought_capture_module, thermal_module, polar_module, neurosity_module, module_registry
+    global thought_capture_module, thermal_module, polar_module, neurosity_module, gazepoint_module, dashboard_home_module, module_registry
     
     # Initialisation du gestionnaire WebSocket
     websocket_manager.init_app(app)
@@ -72,22 +74,61 @@ def init_modules():
         init_polar_module,
         register_polar_websocket_events
     )
+    from modules.gazepoint.gazepoint import (
+        init_gazepoint_module,
+        register_gazepoint_websocket_events,
+        register_gazepoint_routes
+    )
+    # AJOUT: Import du module dashboard
+    from modules.dashboard.dashboard_home import (
+        init_dashboard_home_module,
+        register_dashboard_home_websocket_events
+    )
     
-    # Initialisation des modules
+    # Initialisation du module Thought Capture
     init_thought_capture(app)
     logger.info("Module Thought Capture initialisé")
     
+    # Initialisation du module Caméra Thermique
     thermal_module = init_thermal_module(app, websocket_manager)
     logger.info("Module Caméra Thermique initialisé")
     
+    # Initialisation du module Polar
     polar_module = init_polar_module(app, websocket_manager)
     logger.info("Module Polar initialisé")
     
+    # Initialisation du module Neurosity
     neurosity_module = init_neurosity_module(app, websocket_manager)
     if neurosity_module:
         logger.info("Module Neurosity initialisé")
     else:
         logger.warning("Module Neurosity non initialisé - vérifiez la configuration .env")
+    
+    # Initialisation du module Gazepoint
+    try:
+        gazepoint_module = init_gazepoint_module(app, websocket_manager)
+        if gazepoint_module:
+            logger.info("Module Gazepoint initialisé")
+            # Enregistrer les routes Flask pour Gazepoint
+            register_gazepoint_routes(app)
+        else:
+            logger.warning("Module Gazepoint non initialisé")
+    except Exception as e:
+        logger.error(f"Erreur lors de l'initialisation du module Gazepoint: {e}")
+        gazepoint_module = None
+    
+    # AJOUT: Initialisation du module Dashboard Home
+    dashboard_home_module = init_dashboard_home_module(app, websocket_manager)
+    
+    # AJOUT: Passer les références des autres modules au dashboard
+    dashboard_home_module.set_module_references(
+        polar_module=polar_module,
+        neurosity_module=neurosity_module,
+        thermal_module=thermal_module,
+        gazepoint_module=gazepoint_module
+    )
+    
+    logger.info("Module Dashboard Home initialisé avec références")
     
     # Enregistrer les événements WebSocket des modules
     register_module_websocket_events()
@@ -190,7 +231,7 @@ def open_browser(port):
     
     def _open():
         time.sleep(1.5)
-        url = f'http://localhost:{port}'
+        url = f'http://localhost:{port}/#home'
         logger.info(f"Ouverture du navigateur: {url}")
         webbrowser.open(url)
     
@@ -387,71 +428,98 @@ def get_websocket_clients():
 
 
 # ========================
-# ENREGISTREMENT DES ÉVÉNEMENTS WEBSOCKET DES MODULES
+# HANDLERS D'ÉVÉNEMENTS WEBSOCKET HOME & DEVICES
 # ========================
 
-def register_module_websocket_events():
-    """Enregistrer les événements WebSocket spécifiques aux modules"""
-    from modules.polar.polar import register_polar_websocket_events
-    from modules.thermal_camera.thermal_camera import register_thermal_websocket_events
-    from modules.neurosity.neurosity import register_neurosity_websocket_events
-    from modules.thought_capture.thought_capture import register_websocket_events as register_thought_capture_events
-    
-    # Événements pour le module Polar
-    if polar_module:
-        register_polar_websocket_events(websocket_manager, polar_module)
-    
-    # Événements pour le module Neurosity (EEG)
-    neurosity_events = {
-        'start_recording': handle_neurosity_start_recording,
-        'stop_recording': handle_neurosity_stop_recording,
-        'get_brain_waves': handle_neurosity_brain_waves_request
-    }
-    websocket_manager.register_module_events('neurosity', neurosity_events)
-    
-    # Enregistrer les événements du module thermique
-    if thermal_module:
-        register_thermal_websocket_events(websocket_manager, thermal_module)
-    
-    # Enregistrer les événements du module Neurosity (les vrais handlers)
-    if neurosity_module:
-        register_neurosity_websocket_events(websocket_manager, neurosity_module)
-    
-    # Événements pour le module Gazepoint
-    gazepoint_events = {
-        'start_tracking': handle_gazepoint_start_tracking,
-        'stop_tracking': handle_gazepoint_stop_tracking,
-        'get_gaze_data': handle_gazepoint_data_request
-    }
-    websocket_manager.register_module_events('gazepoint', gazepoint_events)
-    
-    # Événements pour le module Capture de la Pensée
-    thought_events = {
-        'start_thought_capture': handle_thought_start_capture,
-        'stop_thought_capture': handle_thought_stop_capture,
-        'decode_intention': handle_thought_decode_intention
-    }
-    websocket_manager.register_module_events('thought_capture', thought_events)
-    
-    # Enregistrer les événements du module Capture de la Pensée
-    register_thought_capture_events(websocket_manager)
-
-
-# ========================
-# HANDLERS D'ÉVÉNEMENTS WEBSOCKET
-# ========================
-
-def handle_dashboard_data_request(data):
-    """Gérer une demande de données du dashboard"""
-    modules = module_registry.get_all_modules() if module_registry else {}
-    websocket_manager.emit_to_current_client('dashboard_data', {
-        'modules': modules,
-        'websocket_status': {
-            'connected_clients': websocket_manager.get_connected_clients_count(),
-            'active_modules': websocket_manager.get_active_modules_count()
+def handle_get_devices_status(data):
+    """Gère la demande de statut des appareils"""
+    status = {
+        'polar': {
+            'connected': False,
+            'devices': []
+        },
+        'neurosity': {
+            'connected': False
+        },
+        'thermal': {
+            'connected': False
         },
         'timestamp': datetime.now().isoformat()
-    })
+    }
+    
+    # Vérifier le statut Polar
+    if polar_module:
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            polar_status = loop.run_until_complete(polar_module.get_devices_status())
+            
+            # Vérifier que polar_status n'est pas None
+            if polar_status:
+                if polar_status.get('h10', {}).get('connected'):
+                    status['polar']['connected'] = True
+                    status['polar']['devices'].append('h10')
+                
+                if polar_status.get('verity', {}).get('connected'):
+                    status['polar']['connected'] = True
+                    status['polar']['devices'].append('verity')
+        except Exception as e:
+            logger.error(f"Erreur récupération statut Polar: {e}")
+    
+    # Vérifier le statut Neurosity
+    if neurosity_module and hasattr(neurosity_module, 'crown') and neurosity_module.crown:
+        status['neurosity']['connected'] = True
+    
+    websocket_manager.emit_to_current_client('devices_status', status)
+
+
+def handle_dashboard_home_request(data):
+    """Gère les requêtes du dashboard home"""
+    if dashboard_home_module:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        status = loop.run_until_complete(dashboard_home_module.get_aggregated_data())
+        websocket_manager.emit_to_current_client('dashboard_data', status)
+
+
+def handle_dashboard_home_status(data):
+    """Envoie le statut du dashboard home"""
+    if dashboard_home_module:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        status = loop.run_until_complete(dashboard_home_module.get_aggregated_data())
+        websocket_manager.emit_to_current_client('dashboard_status', status)
+
+
+def handle_start_collection(data):
+    """Démarre la collecte globale via dashboard"""
+    if dashboard_home_module:
+        result = dashboard_home_module.start_collection()
+        websocket_manager.emit_to_current_client('collection_started', result)
+
+
+def handle_stop_collection(data):
+    """Arrête la collecte globale via dashboard"""
+    if dashboard_home_module:
+        result = dashboard_home_module.stop_collection()
+        websocket_manager.emit_to_current_client('collection_stopped', result)
+
+
+def handle_dashboard_data_request(data):
+    """Gérer une demande de données du dashboard (fallback)"""
+    if dashboard_home_module:
+        handle_dashboard_home_request(data)
+    else:
+        # Fallback vers l'ancien système
+        modules = module_registry.get_all_modules() if module_registry else {}
+        websocket_manager.emit_to_current_client('dashboard_data', {
+            'modules': modules,
+            'websocket_status': {
+                'connected_clients': websocket_manager.get_connected_clients_count(),
+                'active_modules': websocket_manager.get_active_modules_count()
+            },
+            'timestamp': datetime.now().isoformat()
+        })
 
 
 def handle_dashboard_config_update(data):
@@ -463,155 +531,60 @@ def handle_dashboard_config_update(data):
     })
 
 
-def handle_polar_start_monitoring(data):
-    """Démarrer le monitoring Polar"""
-    logger.info("Démarrage du monitoring Polar")
-    websocket_manager.emit_to_module('polar', 'monitoring_started', {
-        'status': 'active',
-        'timestamp': datetime.now().isoformat()
-    })
+# ========================
+# ENREGISTREMENT DES ÉVÉNEMENTS WEBSOCKET DES MODULES
+# ========================
 
-
-def handle_polar_stop_monitoring(data):
-    """Arrêter le monitoring Polar"""
-    logger.info("Arrêt du monitoring Polar")
-    websocket_manager.emit_to_module('polar', 'monitoring_stopped', {
-        'status': 'inactive',
-        'timestamp': datetime.now().isoformat()
-    })
-
-
-def handle_polar_hrv_request(data):
-    """Gérer une demande de données HRV"""
-    fake_hrv_data = {
-        'hrv_score': 45.2,
-        'rmssd': 38.7,
-        'heart_rate': 72,
-        'timestamp': datetime.now().isoformat()
+def register_module_websocket_events():
+    """Enregistrer les événements WebSocket spécifiques aux modules"""
+    from modules.polar.polar import register_polar_websocket_events
+    from modules.thermal_camera.thermal_camera import register_thermal_websocket_events
+    from modules.neurosity.neurosity import register_neurosity_websocket_events
+    from modules.thought_capture.thought_capture import register_websocket_events as register_thought_capture_events
+    from modules.gazepoint.gazepoint import register_gazepoint_websocket_events
+    
+    # MODIFICATION: Événements pour le dashboard principal pointent vers dashboard
+    dashboard_events = {
+        'request_dashboard_data': handle_dashboard_home_request,
+        'get_dashboard_status': handle_dashboard_home_status,
+        'start_collection': handle_start_collection,
+        'stop_collection': handle_stop_collection,
+        'update_dashboard_config': handle_dashboard_config_update,
+        'get_devices_status': handle_get_devices_status  # NOUVEAU
     }
-    websocket_manager.emit_to_current_client('polar_hrv_data', fake_hrv_data)
-
-
-def handle_neurosity_start_recording(data):
-    """Démarrer l'enregistrement Neurosity"""
-    logger.info("Démarrage de l'enregistrement Neurosity")
-    websocket_manager.emit_to_module('neurosity', 'recording_started', {
-        'status': 'recording',
-        'timestamp': datetime.now().isoformat()
-    })
-
-
-def handle_neurosity_stop_recording(data):
-    """Arrêter l'enregistrement Neurosity"""
-    logger.info("Arrêt de l'enregistrement Neurosity")
-    websocket_manager.emit_to_module('neurosity', 'recording_stopped', {
-        'status': 'idle',
-        'timestamp': datetime.now().isoformat()
-    })
-
-
-def handle_neurosity_brain_waves_request(data):
-    """Gérer une demande de données d'ondes cérébrales Neurosity"""
-    fake_brain_waves = {
-        'alpha': 12.5,
-        'beta': 8.3,
-        'theta': 6.1,
-        'delta': 2.8,
-        'gamma': 4.2,
-        'focus_level': 0.76,
-        'calm_level': 0.82,
-        'timestamp': datetime.now().isoformat()
-    }
-    websocket_manager.emit_to_current_client('neurosity_brain_waves', fake_brain_waves)
-
-
-def handle_thermal_start_capture(data):
-    """Démarrer la capture thermique"""
-    logger.info("Démarrage de la capture thermique")
-    websocket_manager.emit_to_module('thermal_camera', 'capture_started', {
-        'status': 'capturing',
-        'timestamp': datetime.now().isoformat()
-    })
-
-
-def handle_thermal_stop_capture(data):
-    """Arrêter la capture thermique"""
-    logger.info("Arrêt de la capture thermique")
-    websocket_manager.emit_to_module('thermal_camera', 'capture_stopped', {
-        'status': 'idle',
-        'timestamp': datetime.now().isoformat()
-    })
-
-
-def handle_thermal_temperature_request(data):
-    """Gérer une demande de carte de température"""
-    fake_thermal_data = {
-        'average_temp': 36.7,
-        'max_temp': 37.2,
-        'min_temp': 35.8,
-        'thermal_map': 'base64_image_data_here',
-        'timestamp': datetime.now().isoformat()
-    }
-    websocket_manager.emit_to_current_client('thermal_temperature_data', fake_thermal_data)
-
-
-def handle_gazepoint_start_tracking(data):
-    """Démarrer le tracking oculaire"""
-    logger.info("Démarrage du tracking oculaire")
-    websocket_manager.emit_to_module('gazepoint', 'tracking_started', {
-        'status': 'tracking',
-        'timestamp': datetime.now().isoformat()
-    })
-
-
-def handle_gazepoint_stop_tracking(data):
-    """Arrêter le tracking oculaire"""
-    logger.info("Arrêt du tracking oculaire")
-    websocket_manager.emit_to_module('gazepoint', 'tracking_stopped', {
-        'status': 'idle',
-        'timestamp': datetime.now().isoformat()
-    })
-
-
-def handle_gazepoint_data_request(data):
-    """Gérer une demande de données de regard"""
-    fake_gaze_data = {
-        'gaze_x': 1024,
-        'gaze_y': 768,
-        'pupil_diameter': 4.2,
-        'fixation_duration': 250,
-        'timestamp': datetime.now().isoformat()
-    }
-    websocket_manager.emit_to_current_client('gazepoint_gaze_data', fake_gaze_data)
-
-
-def handle_thought_start_capture(data):
-    """Démarrer la capture de pensée"""
-    logger.info("Démarrage de la capture de pensée")
-    websocket_manager.emit_to_module('thought_capture', 'capture_started', {
-        'status': 'capturing',
-        'timestamp': datetime.now().isoformat()
-    })
-
-
-def handle_thought_stop_capture(data):
-    """Arrêter la capture de pensée"""
-    logger.info("Arrêt de la capture de pensée")
-    websocket_manager.emit_to_module('thought_capture', 'capture_stopped', {
-        'status': 'idle',
-        'timestamp': datetime.now().isoformat()
-    })
-
-
-def handle_thought_decode_intention(data):
-    """Décoder une intention mentale"""
-    fake_intention_data = {
-        'intention': 'move_cursor_right',
-        'confidence': 0.87,
-        'brain_signal_strength': 0.92,
-        'timestamp': datetime.now().isoformat()
-    }
-    websocket_manager.emit_to_current_client('thought_intention_decoded', fake_intention_data)
+    websocket_manager.register_module_events('dashboard', dashboard_events)
+    
+    # Événements pour le module Polar
+    if polar_module:
+        register_polar_websocket_events(websocket_manager, polar_module)
+    
+    # Enregistrer les événements du module thermique
+    if thermal_module:
+        register_thermal_websocket_events(websocket_manager, thermal_module)
+    
+    # Enregistrer les événements du module Neurosity
+    if neurosity_module:
+        register_neurosity_websocket_events(websocket_manager, neurosity_module)
+    
+    # Enregistrer les événements du module Gazepoint
+    if gazepoint_module:
+        register_gazepoint_websocket_events(websocket_manager, gazepoint_module)
+        logger.info("Événements WebSocket Gazepoint enregistrés avec succès")
+    else:
+        logger.warning("Module Gazepoint non disponible pour l'enregistrement des événements")
+    
+    # Enregistrer les événements du module Capture de la Pensée
+    register_thought_capture_events(websocket_manager)
+    
+    # AJOUT: Enregistrer les événements du module Dashboard Home
+    if dashboard_home_module:
+        from modules.dashboard.dashboard_home import register_dashboard_home_websocket_events
+        register_dashboard_home_websocket_events(
+            websocket_manager,
+            dashboard_home_module,
+            polar_module=polar_module
+        )
+        logger.info("Événements WebSocket Dashboard Home enregistrés")
 
 
 # ========================
@@ -637,6 +610,15 @@ def cleanup_modules():
     """Nettoyer tous les modules avant l'arrêt"""
     logger.info("Nettoyage des modules...")
     
+    # AJOUT: Nettoyer le module Dashboard Home
+    if dashboard_home_module:
+        try:
+            if dashboard_home_module.collection_state['is_collecting']:
+                dashboard_home_module.stop_collection()
+            logger.info("Module Dashboard Home nettoyé")
+        except Exception as e:
+            logger.error(f"Erreur nettoyage module Dashboard Home: {e}")
+    
     # Nettoyer le module Neurosity
     if neurosity_module:
         try:
@@ -645,6 +627,7 @@ def cleanup_modules():
         except Exception as e:
             logger.error(f"Erreur nettoyage module Neurosity: {e}")
     
+    # Nettoyer le module Polar
     if polar_module:
         try:
             loop = asyncio.new_event_loop()
@@ -653,6 +636,22 @@ def cleanup_modules():
             logger.info("Module Polar nettoyé")
         except Exception as e:
             logger.error(f"Erreur nettoyage module Polar: {e}")
+    
+    # Nettoyer le module Gazepoint
+    if gazepoint_module:
+        try:
+            gazepoint_module.cleanup()
+            logger.info("Module Gazepoint nettoyé")
+        except Exception as e:
+            logger.error(f"Erreur nettoyage module Gazepoint: {e}")
+    
+    # Nettoyer le module Thermal
+    if thermal_module:
+        try:
+            thermal_module.stop_capture()
+            logger.info("Module Thermal nettoyé")
+        except Exception as e:
+            logger.error(f"Erreur nettoyage module Thermal: {e}")
     
     logger.info("Nettoyage terminé")
 
@@ -676,7 +675,7 @@ if __name__ == '__main__':
         log.setLevel(logging.ERROR)
     
     logger.info("=" * 60)
-    logger.info("DÉMARRAGE DU DASHBOARD")
+    logger.info("DÉMARRAGE DU BIOMEDICAL HUB")
     logger.info("=" * 60)
     logger.info(f"Serveur: http://localhost:{port}")
     logger.info(f"Mode debug: {debug}")

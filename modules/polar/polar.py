@@ -233,6 +233,21 @@ class PolarModule:
             logger.error(f"Erreur déconnexion {device_type}: {e}")
             return False
     
+    def _make_serializable(self, obj: Any) -> Any:
+        """Convertit récursivement un objet pour qu'il soit sérialisable en JSON"""
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, dict):
+            return {k: self._make_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._make_serializable(v) for v in obj]
+        elif isinstance(obj, tuple):
+            return tuple(self._make_serializable(v) for v in obj)
+        elif hasattr(obj, '__dict__'):
+            return self._make_serializable(obj.__dict__)
+        else:
+            return obj
+    
     def _handle_device_data(self, device_type: str, data: Dict[str, Any]):
         """Gère les nouvelles données d'un appareil"""
         try:
@@ -249,10 +264,20 @@ class PolarModule:
                 metrics = collector.get_real_time_metrics()
                 data['real_time_metrics'] = metrics
             
-            # Émettre via WebSocket
+            # Créer une copie sérialisable des données
+            serializable_data = self._make_serializable(data)
+            
+            # Émettre via WebSocket au module Polar
             self.websocket_manager.emit_to_module('polar', f'{device_type}_data', {
                 'device_type': device_type,
-                'data': data,
+                'data': serializable_data,
+                'timestamp': datetime.now().isoformat()
+            })
+            
+            # NOUVEAU: Broadcaster globalement pour le module Home
+            self.websocket_manager.broadcast(f'polar_{device_type}_data', {
+                'device_type': device_type,
+                'data': serializable_data,
                 'timestamp': datetime.now().isoformat()
             })
             
@@ -662,38 +687,6 @@ class PolarModule:
             pass
         
         return "N/A"
-    
-    def _generate_readme_content(self) -> str:
-        """Génère le contenu du fichier README pour le ZIP"""
-        return f"""Module Polar - BioMedical Hub
-============================
-
-Date d'export: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-Format des fichiers CSV:
------------------------
-Délimiteur: {self.config['csv_delimiter']}
-Encodage: UTF-8
-
-Colonnes:
-- timestamp: Timestamp Unix avec millisecondes
-- heart_rate_bpm: Fréquence cardiaque en battements par minute
-- rr_interval_ms: Intervalle RR en millisecondes (un par ligne)
-- breathing_rate_rpm: Fréquence respiratoire RSA en respirations par minute
-- breathing_amplitude: Amplitude de la respiration RSA
-- breathing_quality: Qualité du signal RSA (excellent/good/fair/poor)
-- battery_level: Niveau de batterie du capteur en %
-
-Notes:
-------
-- Chaque ligne représente un intervalle RR unique
-- Les timestamps sont calculés rétrospectivement pour chaque RR
-- La respiration est calculée par analyse RSA (Respiratory Sinus Arrhythmia)
-- Les fichiers _h10.csv proviennent du Polar H10
-- Les fichiers _verity.csv proviennent du Polar Verity Sense
-
-Pour plus d'informations: https://github.com/biomedical-hub
-"""
     
     # ===== MÉTHODES D'INFORMATION =====
     

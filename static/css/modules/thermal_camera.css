@@ -76,6 +76,25 @@
     margin: 0;
 }
 
+/* Animation de vague pour le titre du graphique */
+.graph-card .thermal-card-title {
+    background: linear-gradient(90deg, #6366f1, #ec4899, #6366f1);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: wave-text 3s ease-in-out infinite;
+}
+
+@keyframes wave-text {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
 /* Statut */
 .thermal-status {
     display: flex;
@@ -264,23 +283,85 @@
     flex: 1;
 }
 
+/* Statistiques de température améliorées */
 .temperature-stats {
     display: flex;
     gap: 16px;
+    margin-bottom: -8px;
 }
 
 .temperature-stats span {
     font-size: 0.875rem;
-    padding: 4px 12px;
-    background: var(--thermal-bg);
+    padding: 6px 14px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
+    border: 1px solid rgba(99, 102, 241, 0.2);
     border-radius: 20px;
     color: var(--thermal-text);
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
+.temperature-stats span:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Indicateurs visuels de température */
+.temp-avg::before {
+    content: '📊 ';
+    font-size: 0.9em;
+}
+
+.temp-max::before {
+    content: '🔥 ';
+    font-size: 0.9em;
+}
+
+.temp-min::before {
+    content: '❄️ ';
+    font-size: 0.9em;
+}
+
+/* Container du graphique amélioré */
 .chart-container {
     padding: 24px;
+    background: linear-gradient(to bottom, rgba(99, 102, 241, 0.03), rgba(236, 72, 153, 0.03));
+    border-radius: 8px;
     height: 300px;
     position: relative;
+    overflow: hidden;
+}
+
+/* Effet de lueur derrière le graphique */
+.chart-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: pulse-glow 4s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        opacity: 0.5;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+}
+
+/* Canvas du graphique */
+#thermal-chart {
+    position: relative;
+    z-index: 1;
 }
 
 /* Contrôles d'enregistrement */
@@ -472,6 +553,16 @@
     
     .temperature-stats {
         flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .temperature-stats span {
+        font-size: 0.8125rem;
+        padding: 4px 10px;
+    }
+    
+    .chart-container {
+        padding: 16px;
     }
     
     .recording-item {

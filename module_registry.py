@@ -21,9 +21,9 @@ class ModuleRegistry:
         """Initialiser les modules par défaut"""
         self.modules = {
             'dashboard': {
-                'name': 'Dashboard Principal',
+                'name': 'Base Principal',
                 'description': 'Centre de contrôle principal',
-                'icon': 'fas fa-dashboard_home',
+                'icon': 'fas fa-dashboard',
                 'enabled': True,
                 'status': 'active',
                 'version': '1.0.0',
@@ -150,23 +150,36 @@ class ModuleRegistry:
                 'status': 'ready',
                 'version': '1.0.0',
                 'category': 'sensor',
-                'dependencies': ['gazepoint_api'],
+                'dependencies': ['socket', 'xml'],
                 'features': [
                     'Tracking oculaire haute précision',
                     'Heatmaps de fixation du regard',
                     'Analyse des patterns d\'attention',
-                    'Évaluation cognitive'
+                    'Évaluation cognitive',
+                    'Calibration 9 points',
+                    'Enregistrement CSV des sessions',
+                    'Zones d\'intérêt (AOI) configurables',
+                    'Trajectoire du regard en temps réel'
                 ],
                 'websocket_events': [
-                    'start_tracking',
-                    'stop_tracking',
-                    'get_gaze_data'
+                    'connect',
+                    'disconnect',
+                    'start_calibration',
+                    'start_recording',
+                    'stop_recording',
+                    'get_sessions'
                 ],
                 'config': {
+                    'server_ip': '127.0.0.1',
+                    'server_port': 4242,
                     'sampling_rate': 60,
                     'calibration_points': 9,
-                    'accuracy_threshold': 0.5
+                    'auto_connect': False
                 },
+                'api_routes': [
+                    {'path': '/api/gazepoint/status', 'method': 'GET'},
+                    {'path': '/api/gazepoint/download/<filename>', 'method': 'GET'}
+                ],
                 'created_at': datetime.now().isoformat()
             },
             'thought_capture': {

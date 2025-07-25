@@ -17,7 +17,7 @@ class ThermalCameraModule {
         // Configuration du graphique
         this.chartConfig = {
             updateInterval: 1000,
-            animationDuration: 300
+            animationDuration: 750
         };
 
         // Points de mesure du visage
@@ -76,31 +76,45 @@ class ThermalCameraModule {
             this.chart.destroy();
         }
 
-        // Couleurs pour chaque point de mesure
-        const colors = [
-            '#ef4444', '#f59e0b', '#10b981', '#3b82f6',
-            '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'
-        ];
+        // Créer un gradient pour le fond
+        const ctx = chartCanvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)');
+        gradient.addColorStop(0.5, 'rgba(236, 72, 153, 0.3)');
+        gradient.addColorStop(1, 'rgba(99, 102, 241, 0.1)');
 
-        // Initialisation pour un seul dataset (dernières valeurs)
+        // Créer un gradient pour la ligne
+        const lineGradient = ctx.createLinearGradient(0, 0, chartCanvas.width, 0);
+        lineGradient.addColorStop(0, '#6366f1');
+        lineGradient.addColorStop(0.5, '#ec4899');
+        lineGradient.addColorStop(1, '#6366f1');
+
+        // Initialisation pour un graphique en ligne avec style vague
         this.chartData = {
             labels: this.facePoints,
             datasets: [{
-                label: 'Température actuelle',
-                data: new Array(this.facePoints.length).fill(0),
-                backgroundColor: colors.map(color => color + 'CC'), // Couleurs avec transparence
-                borderColor: colors,
-                borderWidth: 2,
-                borderRadius: 8, // Coins arrondis pour les barres
-                barThickness: 'flex',
-                hoverBackgroundColor: colors, // Couleur pleine au survol
-                hoverBorderWidth: 3
+                label: 'Température corporelle',
+                data: new Array(this.facePoints.length).fill(36.5),
+                fill: true,
+                backgroundColor: gradient,
+                borderColor: lineGradient,
+                borderWidth: 3,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#6366f1',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: '#6366f1',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 3,
+                tension: 0.4, // Courbe lisse pour effet de vague
+                cubicInterpolationMode: 'monotone'
             }]
         };
 
-        // Configuration Chart.js pour Bar Chart
+        // Configuration Chart.js pour Line Chart avec style vague
         this.chart = new Chart(chartCanvas, {
-            type: 'bar',
+            type: 'line',
             data: this.chartData,
             options: {
                 responsive: true,
@@ -111,23 +125,56 @@ class ThermalCameraModule {
                 },
                 plugins: {
                     legend: {
-                        display: false // Pas besoin de légende pour un seul dataset
+                        display: true,
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            boxWidth: 15,
+                            padding: 15,
+                            font: {
+                                size: 13,
+                                family: 'Inter',
+                                weight: '500'
+                            },
+                            color: '#4b5563',
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 12,
-                        cornerRadius: 8,
+                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                        padding: 14,
+                        cornerRadius: 10,
                         titleFont: {
                             size: 14,
-                            family: 'Inter'
+                            family: 'Inter',
+                            weight: '600'
                         },
                         bodyFont: {
                             size: 13,
                             family: 'Inter'
                         },
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        displayColors: false,
                         callbacks: {
+                            title: function(context) {
+                                return `Point de mesure: ${context[0].label}`;
+                            },
                             label: function(context) {
-                                return 'Température: ' + context.parsed.y.toFixed(1) + '°C';
+                                const temp = context.parsed.y.toFixed(1);
+                                let emoji = '🌡️';
+                                if (temp > 38) emoji = '🔥';
+                                else if (temp > 37.5) emoji = '🌡️';
+                                else if (temp < 35.5) emoji = '❄️';
+                                return `${emoji} Température: ${temp}°C`;
+                            },
+                            afterLabel: function(context) {
+                                const temp = context.parsed.y;
+                                if (temp > 38) return 'État: Fièvre';
+                                else if (temp > 37.5) return 'État: Légèrement élevée';
+                                else if (temp < 35.5) return 'État: Basse';
+                                return 'État: Normale';
                             }
                         }
                     }
@@ -140,10 +187,14 @@ class ThermalCameraModule {
                         },
                         ticks: {
                             font: {
-                                size: 11,
+                                size: 12,
                                 family: 'Inter',
-                                weight: 500
-                            }
+                                weight: '500'
+                            },
+                            color: '#6b7280',
+                            padding: 8,
+                            maxRotation: 45,
+                            minRotation: 45
                         }
                     },
                     y: {
@@ -153,32 +204,68 @@ class ThermalCameraModule {
                             display: true,
                             text: 'Température (°C)',
                             font: {
-                                size: 12,
-                                family: 'Inter'
-                            }
+                                size: 13,
+                                family: 'Inter',
+                                weight: '600'
+                            },
+                            color: '#4b5563',
+                            padding: 15
                         },
-                        min: 30,  // Valeur minimale fixe
-                        max: 40,  // Valeur maximale fixe
+                        min: 16,  // Température minimale fixée à 16°C
+                        max: 40,  // Température maximale
                         ticks: {
-                            stepSize: 1, // Intervalles de 1°C
+                            stepSize: 2,
                             callback: function(value) {
-                                return value + '°C';
+                                return value.toFixed(0) + '°C';
                             },
                             font: {
                                 size: 11,
                                 family: 'Inter'
-                            }
+                            },
+                            color: '#9ca3af'
                         },
                         grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
+                            color: 'rgba(156, 163, 175, 0.15)',
+                            drawBorder: false
                         }
                     }
                 },
                 animation: {
-                    duration: this.chartConfig.animationDuration || 300
+                    duration: this.chartConfig.animationDuration,
+                    easing: 'easeInOutQuart'
+                },
+                onHover: (event, activeElements) => {
+                    chartCanvas.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
                 }
             }
         });
+
+        // Ajouter un effet de mise à jour périodique des couleurs (optionnel)
+        this.setupChartColorAnimation();
+    }
+
+    // Nouvelle fonction pour animer les couleurs du graphique
+    setupChartColorAnimation() {
+        if (!this.chart) return;
+
+        let hue = 0;
+        this.colorAnimationInterval = setInterval(() => {
+            if (!this.isActive || !this.chart) return;
+
+            // Créer un nouveau gradient avec une rotation de teinte
+            const ctx = this.chart.canvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+
+            hue = (hue + 1) % 360;
+            gradient.addColorStop(0, `hsla(${hue}, 70%, 60%, 0.5)`);
+            gradient.addColorStop(0.5, `hsla(${(hue + 60) % 360}, 70%, 60%, 0.3)`);
+            gradient.addColorStop(1, `hsla(${hue}, 70%, 60%, 0.1)`);
+
+            // Mettre à jour seulement si le graphique est actif
+            if (this.chart.data.datasets[0]) {
+                this.chart.data.datasets[0].backgroundColor = gradient;
+            }
+        }, 5000); // Changement toutes les 5 secondes
     }
 
     setupEventListeners() {
@@ -297,7 +384,7 @@ class ThermalCameraModule {
         if (this.chart) {
             this.chart.stop();
             // Réinitialiser les données
-            this.chartData.datasets[0].data = new Array(this.facePoints.length).fill(0);
+            this.chartData.datasets[0].data = new Array(this.facePoints.length).fill(36.5);
             this.chart.update('none');
         }
 
@@ -396,10 +483,10 @@ class ThermalCameraModule {
     updateTemperatureData(data) {
         if (!this.chart) return;
 
-        // Mettre à jour les données des barres
+        // Mettre à jour les données du graphique
         const temperatures = [];
         this.facePoints.forEach((point) => {
-            const temp = data.temperatures?.[point] || 0;
+            const temp = data.temperatures?.[point] || 36.5;
             temperatures.push(temp);
         });
 
@@ -500,7 +587,15 @@ class ThermalCameraModule {
 
         console.log(`${data.recordings.length} enregistrements trouvés`);
 
-        const recordingsHTML = data.recordings.map(recording => `
+        // Trier les enregistrements par date (du plus récent au plus ancien)
+        const sortedRecordings = [...data.recordings].sort((a, b) => {
+            // Extraire la date du nom de fichier (format: thermal_YYYYMMDD_HHMMSS.csv)
+            const dateA = this.extractDateFromFilename(a.filename);
+            const dateB = this.extractDateFromFilename(b.filename);
+            return dateB - dateA; // Ordre décroissant (plus récent en haut)
+        });
+
+        const recordingsHTML = sortedRecordings.map(recording => `
             <div class="recording-item">
                 <div class="recording-info-item">
                     <div class="recording-name">${recording.filename}</div>
@@ -521,6 +616,17 @@ class ThermalCameraModule {
 
         listContainer.innerHTML = recordingsHTML;
         console.log('Liste des enregistrements mise à jour');
+    }
+
+    // Fonction utilitaire pour extraire la date du nom de fichier
+    extractDateFromFilename(filename) {
+        // Format attendu: thermal_recording_YYYYMMDD_HHMMSS.csv ou thermal_YYYYMMDD_HHMMSS.csv
+        const match = filename.match(/thermal(?:_recording)?_(\d{8})_(\d{6})\.csv/);
+        if (match) {
+            const dateStr = match[1] + match[2]; // YYYYMMDDHHMMSS
+            return parseInt(dateStr);
+        }
+        return 0; // Retourner 0 si le format n'est pas reconnu
     }
 
     downloadRecording(filename) {
@@ -655,6 +761,11 @@ class ThermalCameraModule {
         // Arrêter le timer
         if (this.thermal_recordingTimer) {
             clearInterval(this.thermal_recordingTimer);
+        }
+
+        // Arrêter l'animation des couleurs
+        if (this.colorAnimationInterval) {
+            clearInterval(this.colorAnimationInterval);
         }
 
         // Détruire le graphique
