@@ -86,7 +86,7 @@ def init_modules():
     )
     
     # Initialisation du module Thought Capture
-    init_thought_capture(app)
+    thought_capture_module = init_thought_capture(app)
     logger.info("Module Thought Capture initialisé")
     
     # Initialisation du module Caméra Thermique
@@ -120,12 +120,13 @@ def init_modules():
     # AJOUT: Initialisation du module Dashboard Home
     dashboard_home_module = init_dashboard_home_module(app, websocket_manager)
     
-    # AJOUT: Passer les références des autres modules au dashboard
+    # MODIFICATION: Passer les références de TOUS les modules au dashboard, incluant thought_capture
     dashboard_home_module.set_module_references(
         polar_module=polar_module,
         neurosity_module=neurosity_module,
         thermal_module=thermal_module,
-        gazepoint_module=gazepoint_module
+        gazepoint_module=gazepoint_module,
+        thought_capture_module=thought_capture_module  # AJOUT: Référence au module thought_capture
     )
     
     logger.info("Module Dashboard Home initialisé avec références")
@@ -444,6 +445,13 @@ def handle_get_devices_status(data):
         'thermal': {
             'connected': False
         },
+        'gazepoint': {
+            'connected': False
+        },
+        'thought_capture': {  # AJOUT: Statut du module thought_capture
+            'ready': True,
+            'recording': False
+        },
         'timestamp': datetime.now().isoformat()
     }
     
@@ -469,6 +477,15 @@ def handle_get_devices_status(data):
     # Vérifier le statut Neurosity
     if neurosity_module and hasattr(neurosity_module, 'crown') and neurosity_module.crown:
         status['neurosity']['connected'] = True
+    
+    # Vérifier le statut Gazepoint
+    if gazepoint_module and hasattr(gazepoint_module, 'is_connected') and gazepoint_module.is_connected:
+        status['gazepoint']['connected'] = True
+    
+    # Vérifier le statut Thought Capture
+    if thought_capture_module:
+        status['thought_capture']['ready'] = True
+        # Si on avait accès à l'état d'enregistrement, on le mettrait ici
     
     websocket_manager.emit_to_current_client('devices_status', status)
 
@@ -582,7 +599,8 @@ def register_module_websocket_events():
         register_dashboard_home_websocket_events(
             websocket_manager,
             dashboard_home_module,
-            polar_module=polar_module
+            polar_module=polar_module,
+            thought_capture_module=thought_capture_module  # AJOUT: Passer la référence thought_capture
         )
         logger.info("Événements WebSocket Dashboard Home enregistrés")
 
@@ -652,6 +670,16 @@ def cleanup_modules():
             logger.info("Module Thermal nettoyé")
         except Exception as e:
             logger.error(f"Erreur nettoyage module Thermal: {e}")
+    
+    # Nettoyer le module Thought Capture
+    if thought_capture_module:
+        try:
+            # Si le module a une méthode cleanup, l'appeler
+            if hasattr(thought_capture_module, 'cleanup'):
+                thought_capture_module.cleanup()
+            logger.info("Module Thought Capture nettoyé")
+        except Exception as e:
+            logger.error(f"Erreur nettoyage module Thought Capture: {e}")
     
     logger.info("Nettoyage terminé")
 

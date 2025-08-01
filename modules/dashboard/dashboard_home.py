@@ -2,7 +2,7 @@
 """
 Module Dashboard Home - Backend pour la vue d'ensemble en temps réel
 Gère l'agrégation et la synchronisation des données de tous les modules
-Version complète avec intégration Polar, Neurosity, Thermal et Gazepoint
+Version complète avec intégration Polar, Neurosity, Thermal, Gazepoint et Thought Capture
 """
 
 import asyncio
@@ -47,6 +47,17 @@ class DashboardHomeModule:
                 'device_info': None,
                 'calibrated': False,
                 'tracking_status': 'none'
+            },
+            'thought_capture': {  # AJOUT: État du module thought_capture
+                'ready': True,
+                'recording': False,
+                'paused': False,
+                'last_data': None,
+                'session_info': {
+                    'start_time': None,
+                    'duration': 0,
+                    'size': 0
+                }
             }
         }
         
@@ -79,14 +90,21 @@ class DashboardHomeModule:
             'pupil_left': deque(maxlen=60),
             'pupil_right': deque(maxlen=60),
             'fixation_duration': deque(maxlen=60),
-            'blink_rate': deque(maxlen=60)
+            'blink_rate': deque(maxlen=60),
+            # Buffers Thought Capture - AJOUT
+            'audio_level': deque(maxlen=60),
+            'audio_frequency': deque(maxlen=60),
+            'audio_waveform': deque(maxlen=256)  # Buffer pour la forme d'onde
         }
         
         # Statistiques de session
         self.session_stats = {
             'start_time': None,
             'total_samples': 0,
-            'devices_active': 0
+            'devices_active': 0,
+            'total_recordings': 0,  # AJOUT: Compteur d'enregistrements
+            'total_recording_duration': 0,  # AJOUT: Durée totale d'enregistrement
+            'total_recording_size': 0  # AJOUT: Taille totale des enregistrements
         }
         
         # État de la collecte globale
@@ -101,6 +119,7 @@ class DashboardHomeModule:
         self.neurosity_module = None
         self.thermal_module = None
         self.gazepoint_module = None
+        self.thought_capture_module = None  # AJOUT: Référence au module thought_capture
         
         # Thread de mise à jour périodique
         self._running = True
@@ -109,12 +128,13 @@ class DashboardHomeModule:
         logger.info("Module Dashboard Home initialisé")
     
     def set_module_references(self, polar_module=None, neurosity_module=None, thermal_module=None,
-                              gazepoint_module=None):
+                              gazepoint_module=None, thought_capture_module=None):
         """Définit les références aux autres modules"""
         self.polar_module = polar_module
         self.neurosity_module = neurosity_module
         self.thermal_module = thermal_module
         self.gazepoint_module = gazepoint_module
+        self.thought_capture_module = thought_capture_module  # AJOUT: Stocker la référence
         logger.info("Références aux modules définies dans Dashboard Home")
     
     def start_periodic_updates(self):
@@ -531,6 +551,139 @@ class DashboardHomeModule:
         except Exception as e:
             logger.error(f"Erreur gestion déconnexion Gazepoint: {e}")
     
+    # === GESTION DES DONNÉES THOUGHT CAPTURE - AJOUT ===
+    
+    def handle_thought_capture_data(self, data_type: str, data: Dict[str, Any]):
+        """Traite les données du module Thought Capture selon leur type"""
+        try:
+            self.devices_state['thought_capture']['last_data'] = data
+            
+            if data_type == 'recording_started':
+                # Début d'enregistrement
+                self.devices_state['thought_capture']['recording'] = True
+                self.devices_state['thought_capture']['paused'] = False
+                self.devices_state['thought_capture']['session_info']['start_time'] = datetime.now()
+                
+                # Notifier le frontend
+                self.websocket_manager.emit_to_module('home', 'thought_capture_recording_started', {
+                    'timestamp': datetime.now().isoformat()
+                })
+            
+            elif data_type == 'recording_stopped':
+                # Fin d'enregistrement
+                self.devices_state['thought_capture']['recording'] = False
+                self.devices_state['thought_capture']['paused'] = False
+                
+                # Mettre à jour les statistiques
+                if 'duration' in data:
+                    self.session_stats['total_recording_duration'] += data['duration']
+                if 'size' in data:
+                    self.session_stats['total_recording_size'] += data['size']
+                self.session_stats['total_recordings'] += 1
+                
+                # Notifier le frontend
+                self.websocket_manager.emit_to_module('home', 'thought_capture_recording_stopped', {
+                    'duration': data.get('duration', 0),
+                    'size': data.get('size', 0),
+                    'timestamp': datetime.now().isoformat()
+                })
+            
+            elif data_type == 'recording_paused':
+                # Pause d'enregistrement
+                self.devices_state['thought_capture']['paused'] = True
+                
+                # Notifier le frontend
+                self.websocket_manager.emit_to_module('home', 'thought_capture_recording_paused', {
+                    'timestamp': datetime.now().isoformat()
+                })
+            
+            elif data_type == 'recording_resumed':
+                # Reprise d'enregistrement
+                self.devices_state['thought_capture']['paused'] = False
+                
+                # Notifier le frontend
+                self.websocket_manager.emit_to_module('home', 'thought_capture_recording_resumed', {
+                    'timestamp': datetime.now().isoformat()
+                })
+            
+            elif data_type == 'audio_level':
+                # Niveau audio en temps réel
+                if 'level' in data:
+                    self.data_buffers['audio_level'].append({
+                        'value': data['level'],
+                        'timestamp': datetime.now().isoformat()
+                    })
+                
+                if 'frequency' in data:
+                    self.data_buffers['audio_frequency'].append({
+                        'value': data['frequency'],
+                        'timestamp': datetime.now().isoformat()
+                    })
+                
+                if 'waveform' in data:
+                    # Stocker la forme d'onde pour visualisation
+                    self.data_buffers['audio_waveform'] = deque(data['waveform'], maxlen=256)
+                
+                # Émettre la mise à jour vers le frontend
+                self.emit_thought_capture_update('audio_level', {
+                    'level': data.get('level', 0),
+                    'frequency': data.get('frequency', 0),
+                    'waveform': list(self.data_buffers['audio_waveform'])
+                })
+            
+            elif data_type == 'stats_update':
+                # Mise à jour des statistiques
+                if 'total_recordings' in data:
+                    self.session_stats['total_recordings'] = data['total_recordings']
+                if 'total_duration' in data:
+                    self.session_stats['total_recording_duration'] = data['total_duration']
+                if 'total_size' in data:
+                    self.session_stats['total_recording_size'] = data['total_size']
+                
+                # Émettre la mise à jour
+                self.emit_thought_capture_update('stats', {
+                    'total_recordings': self.session_stats['total_recordings'],
+                    'total_duration': self.session_stats['total_recording_duration'],
+                    'total_size': self.session_stats['total_recording_size']
+                })
+            
+            # Incrémenter les statistiques générales
+            if data_type in ['audio_level', 'recording_started', 'recording_stopped']:
+                self.session_stats['total_samples'] += 1
+        
+        except Exception as e:
+            logger.error(f"Erreur traitement données Thought Capture {data_type}: {e}")
+    
+    def emit_thought_capture_update(self, update_type: str, data: Dict[str, Any]):
+        """Émet une mise à jour Thought Capture vers le frontend"""
+        try:
+            update_data = {
+                'update_type': update_type,
+                'timestamp': datetime.now().isoformat(),
+                'data': data
+            }
+            
+            # Ajouter l'état actuel
+            update_data['state'] = {
+                'recording': self.devices_state['thought_capture']['recording'],
+                'paused': self.devices_state['thought_capture']['paused'],
+                'duration': self._get_recording_duration()
+            }
+            
+            # Émettre vers le module home
+            self.websocket_manager.emit_to_module('home', 'thought_capture_data_update', update_data)
+        
+        except Exception as e:
+            logger.error(f"Erreur émission mise à jour Thought Capture: {e}")
+    
+    def _get_recording_duration(self) -> float:
+        """Calcule la durée d'enregistrement en cours"""
+        if (self.devices_state['thought_capture']['recording'] and
+                self.devices_state['thought_capture']['session_info']['start_time']):
+            return (datetime.now() - self.devices_state['thought_capture']['session_info'][
+                'start_time']).total_seconds()
+        return 0
+    
     # === ÉMISSION DES MISES À JOUR ===
     
     def emit_polar_update(self, device_type: str, data: Dict[str, Any]):
@@ -718,7 +871,10 @@ class DashboardHomeModule:
                 'session': {
                     'is_collecting': self.collection_state['is_collecting'],
                     'duration': self._get_session_duration(),
-                    'total_samples': self.session_stats['total_samples']
+                    'total_samples': self.session_stats['total_samples'],
+                    'total_recordings': self.session_stats['total_recordings'],  # AJOUT
+                    'total_recording_duration': self.session_stats['total_recording_duration'],  # AJOUT
+                    'total_recording_size': self.session_stats['total_recording_size']  # AJOUT
                 },
                 'timestamp': datetime.now().isoformat()
             }
@@ -748,6 +904,11 @@ class DashboardHomeModule:
                 'connected': self.devices_state['gazepoint']['connected'],
                 'calibrated': self.devices_state['gazepoint'].get('calibrated', False),
                 'tracking_status': self.devices_state['gazepoint'].get('tracking_status', 'none')
+            },
+            'thought_capture': {  # AJOUT: Résumé pour thought_capture
+                'ready': self.devices_state['thought_capture']['ready'],
+                'recording': self.devices_state['thought_capture']['recording'],
+                'paused': self.devices_state['thought_capture']['paused']
             }
         }
         
@@ -774,6 +935,7 @@ class DashboardHomeModule:
             count += 1
         if self.devices_state['gazepoint']['connected']:
             count += 1
+        # Note: thought_capture n'est pas compté comme un "appareil" mais comme un module
         
         self.session_stats['devices_active'] = count
     
@@ -816,6 +978,9 @@ class DashboardHomeModule:
                 if hasattr(self.gazepoint_module, 'start_recording'):
                     result = self.gazepoint_module.start_recording()
                     results['gazepoint'] = {'success': result}
+            
+            # Note: Thought Capture n'a pas d'enregistrement CSV automatique,
+            # c'est contrôlé manuellement par l'utilisateur
             
             # Mettre à jour l'état
             self.collection_state['is_collecting'] = True
@@ -907,7 +1072,10 @@ class DashboardHomeModule:
                 'is_collecting': self.collection_state['is_collecting'],
                 'duration': self._get_session_duration(),
                 'total_samples': self.session_stats['total_samples'],
-                'devices_active': self.session_stats['devices_active']
+                'devices_active': self.session_stats['devices_active'],
+                'total_recordings': self.session_stats['total_recordings'],  # AJOUT
+                'total_recording_duration': self.session_stats['total_recording_duration'],  # AJOUT
+                'total_recording_size': self.session_stats['total_recording_size']  # AJOUT
             },
             'latest_data': {},
             'timestamp': datetime.now().isoformat()
@@ -926,6 +1094,9 @@ class DashboardHomeModule:
         
         if self.devices_state['gazepoint']['last_data']:
             data['latest_data']['gazepoint'] = self.devices_state['gazepoint']['last_data']
+        
+        if self.devices_state['thought_capture']['last_data']:  # AJOUT
+            data['latest_data']['thought_capture'] = self.devices_state['thought_capture']['last_data']
         
         return data
     
@@ -963,7 +1134,7 @@ def init_dashboard_home_module(app, websocket_manager):
 # ===== ENREGISTREMENT DES ÉVÉNEMENTS WEBSOCKET =====
 
 def register_dashboard_home_websocket_events(websocket_manager, dashboard_module, polar_module=None,
-                                             gazepoint_module=None):
+                                             gazepoint_module=None, thought_capture_module=None):
     """Enregistre les événements WebSocket pour le module Dashboard Home"""
     
     # S'abonner aux broadcasts des autres modules
@@ -1054,6 +1225,31 @@ def register_dashboard_home_websocket_events(websocket_manager, dashboard_module
         def handle_gazepoint_disconnected_event(data):
             dashboard_module.handle_gazepoint_disconnected(data)
         
+        # AJOUT: Événements Thought Capture
+        @websocket_manager.socketio.on('thought_capture_recording_started')
+        def handle_thought_capture_recording_started(data):
+            dashboard_module.handle_thought_capture_data('recording_started', data)
+        
+        @websocket_manager.socketio.on('thought_capture_recording_stopped')
+        def handle_thought_capture_recording_stopped(data):
+            dashboard_module.handle_thought_capture_data('recording_stopped', data)
+        
+        @websocket_manager.socketio.on('thought_capture_recording_paused')
+        def handle_thought_capture_recording_paused(data):
+            dashboard_module.handle_thought_capture_data('recording_paused', data)
+        
+        @websocket_manager.socketio.on('thought_capture_recording_resumed')
+        def handle_thought_capture_recording_resumed(data):
+            dashboard_module.handle_thought_capture_data('recording_resumed', data)
+        
+        @websocket_manager.socketio.on('thought_capture_audio_level')
+        def handle_thought_capture_audio_level(data):
+            dashboard_module.handle_thought_capture_data('audio_level', data)
+        
+        @websocket_manager.socketio.on('thought_capture_stats_update')
+        def handle_thought_capture_stats_update(data):
+            dashboard_module.handle_thought_capture_data('stats_update', data)
+        
         logger.info("Dashboard Home abonné aux événements broadcast")
     
     # Événements propres au module Home
@@ -1084,7 +1280,9 @@ def register_dashboard_home_websocket_events(websocket_manager, dashboard_module
         'request_dashboard_state': handle_request_dashboard_state,
         'start_collection': handle_start_collection,
         'stop_collection': handle_stop_collection,
-        'get_aggregated_data': handle_get_aggregated_data
+        'get_aggregated_data': handle_get_aggregated_data,
+        'home_start_collection': handle_start_collection,  # Alias pour compatibilité
+        'home_stop_collection': handle_stop_collection  # Alias pour compatibilité
     }
     
     websocket_manager.register_module_events('home', home_events)

@@ -50,13 +50,13 @@
         </div>
     </nav>
     
-    <!-- Zone principale des cartes -->
+    <!-- Zone principale avec grille optimisée -->
     <div class="dh-main-content">
-        <!-- Première rangée : Polar, Neurosity, Thermal -->
-        <div class="dh-cards-row dh-cards-row-top">
+        <!-- Grille principale 2x3 pour toutes les cartes -->
+        <div class="dh-cards-grid">
             
-            <!-- Carte Polar compacte -->
-            <div class="dh-card-minimal" id="dh-polar-card">
+            <!-- Carte Polar (Position 1,1) -->
+            <div class="dh-card-minimal dh-card-polar" id="dh-polar-card">
                 <div class="dh-card-top">
                     <h3 class="dh-card-title">
                         <i class="fas fa-heartbeat"></i>
@@ -106,8 +106,8 @@
                 </div>
             </div>
             
-            <!-- Carte Neurosity compacte -->
-            <div class="dh-card-minimal" id="dh-neurosity-card">
+            <!-- Carte Neurosity (Position 1,2) -->
+            <div class="dh-card-minimal dh-card-neurosity" id="dh-neurosity-card">
                 <div class="dh-card-top">
                     <h3 class="dh-card-title">
                         <i class="fas fa-brain"></i>
@@ -200,8 +200,8 @@
                 </div>
             </div>
             
-            <!-- Carte Thermal compacte -->
-            <div class="dh-card-minimal" id="dh-thermal-card">
+            <!-- Carte Thermal (Position 1,3) -->
+            <div class="dh-card-minimal dh-card-thermal" id="dh-thermal-card">
                 <div class="dh-card-top">
                     <h3 class="dh-card-title">
                         <i class="fas fa-thermometer-half"></i>
@@ -304,12 +304,9 @@
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Deuxième rangée : Gazepoint -->
-        <div class="dh-cards-row dh-cards-row-bottom">
-            <!-- Carte Gazepoint compacte -->
-            <div class="dh-card-minimal" id="dh-gazepoint-card">
+            
+            <!-- Carte Gazepoint (Position 2,1) -->
+            <div class="dh-card-minimal dh-card-gazepoint" id="dh-gazepoint-card">
                 <div class="dh-card-top">
                     <h3 class="dh-card-title">
                         <i class="fas fa-eye"></i>
@@ -397,6 +394,84 @@
                             <span>Y: <strong id="dh-gaze-y">--</strong></span>
                             <span>Fixation: <strong id="dh-fixation-time">-- ms</strong></span>
                         </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carte Thought Capture (Position 2,2 - Étendue sur 2 colonnes) -->
+            <div class="dh-card-minimal dh-card-thought-capture" id="dh-thought-capture-card">
+                <div class="dh-card-top">
+                    <h3 class="dh-card-title">
+                        <i class="fas fa-microphone"></i>
+                        Capture de Pensée
+                    </h3>
+                    <div class="dh-status-mini" id="dh-thought-capture-status">
+                        <span class="device-indicator offline"></span>
+                        <span class="status-text">Prêt</span>
+                        <span class="recording-timer" id="dh-thought-timer" style="display: none;">
+                            <i class="fas fa-circle recording-dot"></i>
+                            <span class="timer-text">00:00</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="dh-card-main">
+                    <!-- Visualiseur audio -->
+                    <div class="dh-audio-visualizer-section">
+                        <div class="dh-section-header">
+                            <i class="fas fa-wave-square"></i>
+                            <span>Visualisation audio</span>
+                            <span class="dh-live-indicator" id="dh-audio-indicator" style="display: none;">
+                                <span class="live-dot"></span>
+                                REC
+                            </span>
+                        </div>
+                        
+                        <!-- Canvas pour la forme d'onde -->
+                        <canvas class="dh-audio-waveform" id="dh-audio-waveform"></canvas>
+                        
+                        <!-- Niveau audio en temps réel -->
+                        <div class="dh-audio-levels">
+                            <div class="dh-audio-meter">
+                                <div class="meter-label">Niveau</div>
+                                <div class="meter-bar">
+                                    <div class="meter-fill" id="dh-audio-level"></div>
+                                </div>
+                                <div class="meter-value" id="dh-audio-db">-∞ dB</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistiques d'enregistrement -->
+                    <div class="dh-recording-stats">
+                        <div class="dh-stat-item">
+                            <i class="fas fa-file-audio"></i>
+                            <span class="stat-label">Total</span>
+                            <span class="stat-value" id="dh-total-recordings">0</span>
+                        </div>
+                        <div class="dh-stat-item">
+                            <i class="fas fa-clock"></i>
+                            <span class="stat-label">Durée totale</span>
+                            <span class="stat-value" id="dh-total-duration">00:00</span>
+                        </div>
+                        <div class="dh-stat-item">
+                            <i class="fas fa-database"></i>
+                            <span class="stat-label">Taille</span>
+                            <span class="stat-value" id="dh-total-size">0 MB</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Contrôles rapides -->
+                    <div class="dh-thought-controls">
+                        <button class="dh-mini-control" id="dh-thought-record" title="Démarrer l'enregistrement">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button class="dh-mini-control" id="dh-thought-pause" title="Pause" disabled>
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        <button class="dh-mini-control" id="dh-thought-stop" title="Arrêter" disabled>
+                            <i class="fas fa-stop"></i>
+                        </button>
                     </div>
                 </div>
             </div>

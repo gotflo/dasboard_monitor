@@ -1,0 +1,500 @@
+2025-07-25 08:02:43,817 - engineio.server - INFO - Server initialized for threading.
+2025-07-25 08:02:43,818 - websocket_manager - INFO - WebSocket Manager initialisé
+2025-07-25 08:02:43,859 - __main__ - INFO - ==================================================
+2025-07-25 08:02:43,860 - __main__ - INFO - 🏥 BioMedical Hub v2.0.0
+2025-07-25 08:02:43,861 - __main__ - INFO - ==================================================
+2025-07-25 08:02:43,862 - __main__ - INFO - 🔍 Vérification du port 5000...
+2025-07-25 08:02:43,971 - __main__ - INFO - 🚀 Initialisation des modules BioMedical Hub...
+2025-07-25 08:02:43,972 - module_registry - INFO - Registre des modules initialisé avec 6 modules
+2025-07-25 08:02:43,972 - __main__ - INFO - 📦 Chargement du module thought_capture...
+2025-07-25 08:02:43,979 - __main__ - ERROR - ❌ Erreur lors du chargement du module thought_capture: cannot import name 'init_thought_capture_module' from 'modules.thought_capture.thought_capture' (D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\modules\thought_capture\thought_capture.py)
+Traceback (most recent call last):
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\app.py", line 92, in init_modules
+    from modules.thought_capture.thought_capture import (
+ImportError: cannot import name 'init_thought_capture_module' from 'modules.thought_capture.thought_capture' (D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\modules\thought_capture\thought_capture.py)
+2025-07-25 08:02:43,981 - __main__ - INFO - 📦 Chargement du module thermal_camera...
+2025-07-25 08:02:52,574 - modules.thermal_camera.thermal_camera - INFO - Module Caméra Thermique initialisé avec filtres de stabilisation
+2025-07-25 08:02:52,574 - module_registry - WARNING - Module thermal_camera déjà enregistré, mise à jour...
+2025-07-25 08:02:52,575 - __main__ - ERROR - ❌ Erreur lors du chargement du module thermal_camera: argument of type 'ThermalCameraModule' is not iterable
+Traceback (most recent call last):
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\app.py", line 102, in init_modules
+    module_registry.register_module('thermal_camera', thermal_module)
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\module_registry.py", line 233, in register_module
+    if not self._validate_module_config(module_config):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\module_registry.py", line 458, in _validate_module_config
+    if field not in config:
+       ^^^^^^^^^^^^^^^^^^^
+TypeError: argument of type 'ThermalCameraModule' is not iterable
+2025-07-25 08:02:52,614 - __main__ - INFO - 📦 Chargement du module polar...
+2025-07-25 08:02:53,279 - modules.polar.polar - INFO - Module Polar initialisé avec CSV optimisé (une ligne par RR)
+2025-07-25 08:02:53,282 - modules.polar.polar - INFO - Routes API du module Polar enregistrées
+2025-07-25 08:02:53,282 - module_registry - WARNING - Module polar déjà enregistré, mise à jour...
+2025-07-25 08:02:53,282 - __main__ - ERROR - ❌ Erreur lors du chargement du module polar: argument of type 'PolarModule' is not iterable
+Traceback (most recent call last):
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\app.py", line 107, in init_modules
+    module_registry.register_module('polar', polar_module)
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\module_registry.py", line 233, in register_module
+    if not self._validate_module_config(module_config):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\module_registry.py", line 458, in _validate_module_config
+    if field not in config:
+       ^^^^^^^^^^^^^^^^^^^
+TypeError: argument of type 'PolarModule' is not iterable
+2025-07-25 08:02:53,283 - __main__ - INFO - 📦 Chargement du module neurosity...
+2025-07-25 08:02:53,297 - modules.neurosity.neurosity - INFO - Fichier .env chargé depuis: D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\.env
+2025-07-25 08:02:53,297 - modules.neurosity.data_manager - INFO - DataManager initialisé - Dossier: recordings\neurosity
+2025-07-25 08:02:53,938 - engineio.server - INFO - Server initialized for threading.
+2025-07-25 08:02:53,938 - websocket_manager - INFO - WebSocket Manager initialisé
+2025-07-25 08:02:53,971 - modules.neurosity.neurosity - INFO - Fichier .env chargé depuis: D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\.env
+2025-07-25 08:02:53,976 - neurosity_process - INFO - [PROCESS] Démarrage du processus Neurosity...
+2025-07-25 08:02:53,977 - neurosity_process - INFO - [PROCESS] .env chargé depuis: D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\.env
+2025-07-25 08:02:54,313 - modules.neurosity.neurosity - INFO - Processeur de données démarré
+2025-07-25 08:02:54,313 - modules.neurosity.neurosity - INFO - Processus et threads démarrés
+2025-07-25 08:02:54,316 - modules.neurosity.neurosity - INFO - Module Neurosity initialisé
+2025-07-25 08:02:54,316 - websocket_manager - INFO - Événement enregistré: neurosity_connect
+2025-07-25 08:02:54,316 - websocket_manager - INFO - Événement enregistré: neurosity_disconnect
+2025-07-25 08:02:54,317 - websocket_manager - INFO - Événement enregistré: neurosity_start_monitoring
+2025-07-25 08:02:54,317 - websocket_manager - INFO - Événement enregistré: neurosity_stop_monitoring
+2025-07-25 08:02:54,317 - websocket_manager - INFO - Événement enregistré: neurosity_start_recording
+2025-07-25 08:02:54,317 - websocket_manager - INFO - Événement enregistré: neurosity_stop_recording
+2025-07-25 08:02:54,317 - websocket_manager - INFO - Événement enregistré: neurosity_get_sessions
+2025-07-25 08:02:54,317 - websocket_manager - INFO - Événement enregistré: neurosity_get_status
+2025-07-25 08:02:54,318 - modules.neurosity.neurosity - INFO - Événements WebSocket du module Neurosity enregistrés
+2025-07-25 08:02:54,318 - module_registry - WARNING - Module neurosity déjà enregistré, mise à jour...
+2025-07-25 08:02:54,318 - __main__ - ERROR - ❌ Erreur lors du chargement du module neurosity: argument of type 'NeurosityModule' is not iterable
+Traceback (most recent call last):
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\app.py", line 112, in init_modules
+    module_registry.register_module('neurosity', neurosity_module)
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\module_registry.py", line 233, in register_module
+    if not self._validate_module_config(module_config):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\module_registry.py", line 458, in _validate_module_config
+    if field not in config:
+       ^^^^^^^^^^^^^^^^^^^
+TypeError: argument of type 'NeurosityModule' is not iterable
+2025-07-25 08:02:54,319 - __main__ - INFO - 📦 Chargement du module gazepoint...
+2025-07-25 08:02:54,326 - modules.gazepoint.gazepoint - INFO - Module Gazepoint initialisé (serveur par défaut: 127.0.0.1:4242)
+2025-07-25 08:02:54,326 - module_registry - WARNING - Module gazepoint déjà enregistré, mise à jour...
+2025-07-25 08:02:54,326 - __main__ - ERROR - ❌ Erreur lors du chargement du module gazepoint: argument of type 'GazepointModule' is not iterable
+Traceback (most recent call last):
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\app.py", line 117, in init_modules
+    module_registry.register_module('gazepoint', gazepoint_module)
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\module_registry.py", line 233, in register_module
+    if not self._validate_module_config(module_config):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\module_registry.py", line 458, in _validate_module_config
+    if field not in config:
+       ^^^^^^^^^^^^^^^^^^^
+TypeError: argument of type 'GazepointModule' is not iterable
+2025-07-25 08:02:54,327 - __main__ - INFO - 📦 Chargement du module dashboard...
+2025-07-25 08:02:54,339 - modules.dashboard.dashboard_home - INFO - Module Dashboard Home initialisé avec optimisations
+2025-07-25 08:02:54,340 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:54,340 - modules.dashboard.dashboard_home - INFO - Thread de mise à jour périodique démarré
+2025-07-25 08:02:54,340 - modules.dashboard.dashboard_home - INFO - ✅ Module Dashboard Home initialisé avec optimisations
+2025-07-25 08:02:54,341 - __main__ - ERROR - ❌ Erreur lors du chargement du module dashboard: argument of type 'DashboardHomeModule' is not iterable
+Traceback (most recent call last):
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\app.py", line 123, in init_modules
+    module_registry.register_module('home', dashboard_home_module)
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\module_registry.py", line 233, in register_module
+    if not self._validate_module_config(module_config):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\mes_cours\hiver2025\sujets_special\projets\neurosity\dashboard_monitor\module_registry.py", line 458, in _validate_module_config
+    if field not in config:
+       ^^^^^^^^^^^^^^^^^^^
+TypeError: argument of type 'DashboardHomeModule' is not iterable
+2025-07-25 08:02:54,341 - websocket_manager - INFO - Événement enregistré: dashboard_request_dashboard_data
+2025-07-25 08:02:54,341 - websocket_manager - INFO - Événement enregistré: dashboard_get_dashboard_status
+2025-07-25 08:02:54,342 - websocket_manager - INFO - Événement enregistré: dashboard_start_collection
+2025-07-25 08:02:54,342 - websocket_manager - INFO - Événement enregistré: dashboard_stop_collection
+2025-07-25 08:02:54,342 - websocket_manager - INFO - Événement enregistré: dashboard_update_dashboard_config
+2025-07-25 08:02:54,342 - websocket_manager - INFO - Événement enregistré: dashboard_get_devices_status
+2025-07-25 08:02:54,342 - __main__ - INFO - ✅ Événements Dashboard enregistrés
+2025-07-25 08:02:54,343 - websocket_manager - INFO - Événement enregistré: polar_scan_devices
+2025-07-25 08:02:54,343 - websocket_manager - INFO - Événement enregistré: polar_connect_device
+2025-07-25 08:02:54,343 - websocket_manager - INFO - Événement enregistré: polar_disconnect_device
+2025-07-25 08:02:54,343 - websocket_manager - INFO - Événement enregistré: polar_start_csv_recording
+2025-07-25 08:02:54,343 - websocket_manager - INFO - Événement enregistré: polar_stop_csv_recording
+2025-07-25 08:02:54,343 - websocket_manager - INFO - Événement enregistré: polar_get_csv_files
+2025-07-25 08:02:54,343 - websocket_manager - INFO - Événement enregistré: polar_get_csv_status
+2025-07-25 08:02:54,344 - websocket_manager - INFO - Événement enregistré: polar_get_status
+2025-07-25 08:02:54,344 - websocket_manager - INFO - Événement enregistré: polar_get_hrv_data
+2025-07-25 08:02:54,344 - websocket_manager - INFO - Événement enregistré: polar_check_bluetooth
+2025-07-25 08:02:54,344 - modules.polar.polar - INFO - Événements WebSocket du module Polar enregistrés
+2025-07-25 08:02:54,344 - __main__ - INFO - ✅ Événements Polar enregistrés
+2025-07-25 08:02:54,345 - websocket_manager - INFO - Événement enregistré: thermal_camera_start_capture
+2025-07-25 08:02:54,345 - websocket_manager - INFO - Événement enregistré: thermal_camera_stop_capture
+2025-07-25 08:02:54,345 - websocket_manager - INFO - Événement enregistré: thermal_camera_start_recording
+2025-07-25 08:02:54,345 - websocket_manager - INFO - Événement enregistré: thermal_camera_stop_recording
+2025-07-25 08:02:54,345 - websocket_manager - INFO - Événement enregistré: thermal_camera_get_recordings
+2025-07-25 08:02:54,345 - websocket_manager - INFO - Événement enregistré: thermal_camera_delete_recording
+2025-07-25 08:02:54,346 - modules.thermal_camera.thermal_camera - INFO - Événements WebSocket du module thermique enregistrés
+2025-07-25 08:02:54,346 - __main__ - INFO - ✅ Événements Thermal enregistrés
+2025-07-25 08:02:54,346 - websocket_manager - INFO - Événement enregistré: neurosity_connect
+2025-07-25 08:02:54,346 - websocket_manager - INFO - Événement enregistré: neurosity_disconnect
+2025-07-25 08:02:54,346 - websocket_manager - INFO - Événement enregistré: neurosity_start_monitoring
+2025-07-25 08:02:54,346 - websocket_manager - INFO - Événement enregistré: neurosity_stop_monitoring
+2025-07-25 08:02:54,346 - websocket_manager - INFO - Événement enregistré: neurosity_start_recording
+2025-07-25 08:02:54,347 - websocket_manager - INFO - Événement enregistré: neurosity_stop_recording
+2025-07-25 08:02:54,347 - websocket_manager - INFO - Événement enregistré: neurosity_get_sessions
+2025-07-25 08:02:54,347 - websocket_manager - INFO - Événement enregistré: neurosity_get_status
+2025-07-25 08:02:54,347 - modules.neurosity.neurosity - INFO - Événements WebSocket du module Neurosity enregistrés
+2025-07-25 08:02:54,347 - __main__ - INFO - ✅ Événements Neurosity enregistrés
+2025-07-25 08:02:54,347 - websocket_manager - INFO - Événement enregistré: gazepoint_connect
+2025-07-25 08:02:54,347 - websocket_manager - INFO - Événement enregistré: gazepoint_disconnect
+2025-07-25 08:02:54,347 - websocket_manager - INFO - Événement enregistré: gazepoint_start_tracking
+2025-07-25 08:02:54,348 - websocket_manager - INFO - Événement enregistré: gazepoint_stop_tracking
+2025-07-25 08:02:54,348 - websocket_manager - INFO - Événement enregistré: gazepoint_start_recording
+2025-07-25 08:02:54,348 - websocket_manager - INFO - Événement enregistré: gazepoint_stop_recording
+2025-07-25 08:02:54,348 - websocket_manager - INFO - Événement enregistré: gazepoint_start_calibration
+2025-07-25 08:02:54,348 - websocket_manager - INFO - Événement enregistré: gazepoint_get_recordings
+2025-07-25 08:02:54,348 - websocket_manager - INFO - Événement enregistré: gazepoint_delete_recording
+2025-07-25 08:02:54,348 - modules.gazepoint.gazepoint - INFO - Événements WebSocket du module Gazepoint enregistrés
+2025-07-25 08:02:54,349 - __main__ - INFO - ✅ Événements Gazepoint enregistrés
+2025-07-25 08:02:54,349 - websocket_manager - INFO - Événement enregistré: thought_capture_get_recordings_list
+2025-07-25 08:02:54,349 - websocket_manager - INFO - Événement enregistré: thought_capture_delete_recording
+2025-07-25 08:02:54,349 - websocket_manager - INFO - Événement enregistré: thought_capture_get_recording_stats
+2025-07-25 08:02:54,349 - modules.thought_capture.thought_capture - INFO - Événements WebSocket du module Thought Capture enregistrés
+2025-07-25 08:02:54,349 - __main__ - INFO - ✅ Événements Thought Capture enregistrés
+2025-07-25 08:02:54,349 - modules.dashboard.dashboard_home - INFO - ✅ Événements WebSocket Dashboard Home enregistrés avec optimisations
+2025-07-25 08:02:54,350 - __main__ - INFO - ✅ Événements Dashboard Home enregistrés
+2025-07-25 08:02:54,350 - __main__ - INFO - ✅ 6 modules initialisés avec succès
+2025-07-25 08:02:54,351 - __main__ - INFO - 🚀 Serveur démarré sur http://localhost:5000
+2025-07-25 08:02:54,351 - __main__ - INFO - 📊 Dashboard disponible sur http://localhost:{port}/#home
+2025-07-25 08:02:54,351 - __main__ - INFO - 💡 Appuyez sur Ctrl+C pour arrêter le serveur
+2025-07-25 08:02:54,351 - __main__ - INFO - ==================================================
+2025-07-25 08:02:54,372 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.0.164:5000
+2025-07-25 08:02:54,372 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-25 08:02:54,441 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:54,542 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:54,644 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:54,746 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:54,848 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:54,949 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:55,051 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:55,153 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:55,255 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:55,357 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:55,458 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:55,559 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:55,661 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:55,764 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:55,866 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:55,968 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:56,070 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:56,172 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:56,274 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:56,352 - __main__ - INFO - 🌐 Ouverture du navigateur: http://localhost:5000/#home
+2025-07-25 08:02:56,377 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:56,478 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:56,581 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:56,683 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:56,785 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:56,886 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:56,987 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:57,089 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:57,190 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:57,293 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:57,395 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:57,497 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:57,597 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:57,698 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:57,799 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:57,900 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:58,001 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:58,039 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:58] "GET / HTTP/1.1" 200 -
+2025-07-25 08:02:58,102 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:58,203 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:58,304 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:58,371 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:58] "GET /static/css/base.css HTTP/1.1" 200 -
+2025-07-25 08:02:58,405 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:58,411 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:58] "GET /static/css/modules/home.css HTTP/1.1" 200 -
+2025-07-25 08:02:58,412 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:58] "GET /static/css/modules/polar_animations.css HTTP/1.1" 200 -
+2025-07-25 08:02:58,420 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:58] "GET /static/css/modules/polar.css HTTP/1.1" 200 -
+2025-07-25 08:02:58,422 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:58] "GET /static/css/modules/thermal_camera.css HTTP/1.1" 200 -
+2025-07-25 08:02:58,423 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:58] "[36mGET /static/css/modules/neurosity.css HTTP/1.1[0m" 304 -
+2025-07-25 08:02:58,506 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:58,607 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:58,703 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:58] "GET /static/css/modules/gazepoint.css HTTP/1.1" 200 -
+2025-07-25 08:02:58,708 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:58,717 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:58] "GET /static/js/base.js HTTP/1.1" 200 -
+2025-07-25 08:02:58,731 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:58] "[36mGET /static/css/modules/thought_capture.css HTTP/1.1[0m" 304 -
+2025-07-25 08:02:58,753 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:58] "GET /static/js/websocket_client.js HTTP/1.1" 200 -
+2025-07-25 08:02:58,810 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:58,911 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:59,012 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:59,113 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:59,124 - engineio.server - INFO - l60fcpicWGGosB3KAAAA: Sending packet OPEN data {'sid': 'l60fcpicWGGosB3KAAAA', 'upgrades': ['websocket'], 'pingTimeout': 20000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-07-25 08:02:59,124 - engineio.server - INFO - v4bPFAjfhFdDjC8oAAAB: Sending packet OPEN data {'sid': 'v4bPFAjfhFdDjC8oAAAB', 'upgrades': ['websocket'], 'pingTimeout': 20000, 'pingInterval': 25000, 'maxPayload': 1000000}
+2025-07-25 08:02:59,126 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:59] "GET /socket.io/?EIO=4&transport=polling&t=PX1Tn21 HTTP/1.1" 200 -
+2025-07-25 08:02:59,127 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:59] "GET /static/templates/modules/home.html HTTP/1.1" 200 -
+2025-07-25 08:02:59,128 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:59] "GET /socket.io/?EIO=4&transport=polling&t=PX1Tn1_ HTTP/1.1" 200 -
+2025-07-25 08:02:59,213 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:59,315 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:59,358 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:59] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-07-25 08:02:59,389 - engineio.server - INFO - l60fcpicWGGosB3KAAAA: Received packet MESSAGE data 0
+2025-07-25 08:02:59,390 - __main__ - INFO - ✅ Client connecté. Total: 1
+2025-07-25 08:02:59,391 - socketio.server - INFO - emitting event "welcome" to zS6ZHy6KyAu3pYigAAAC [/]
+2025-07-25 08:02:59,391 - engineio.server - INFO - l60fcpicWGGosB3KAAAA: Sending packet MESSAGE data 2["welcome",{"message":"Bienvenue sur BioMedical Hub","version":"2.0.0","animation":"fadeIn"}]
+2025-07-25 08:02:59,392 - engineio.server - INFO - l60fcpicWGGosB3KAAAA: Sending packet MESSAGE data 0{"sid":"zS6ZHy6KyAu3pYigAAAC"}
+2025-07-25 08:02:59,392 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:59] "POST /socket.io/?EIO=4&transport=polling&t=PX1Tn7l&sid=l60fcpicWGGosB3KAAAA HTTP/1.1" 200 -
+2025-07-25 08:02:59,416 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:59,497 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:59] "GET /socket.io/?EIO=4&transport=polling&t=PX1Tn7n&sid=l60fcpicWGGosB3KAAAA HTTP/1.1" 200 -
+2025-07-25 08:02:59,496 - engineio.server - INFO - v4bPFAjfhFdDjC8oAAAB: Received packet MESSAGE data 0
+2025-07-25 08:02:59,497 - engineio.server - INFO - l60fcpicWGGosB3KAAAA: Received request to upgrade to websocket
+2025-07-25 08:02:59,498 - __main__ - INFO - ✅ Client connecté. Total: 2
+2025-07-25 08:02:59,500 - socketio.server - INFO - emitting event "welcome" to UBkArEGqk8kJCRCOAAAD [/]
+2025-07-25 08:02:59,501 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:59] "GET /socket.io/?EIO=4&transport=polling&t=PX1Tn7o.0&sid=v4bPFAjfhFdDjC8oAAAB HTTP/1.1" 200 -
+2025-07-25 08:02:59,501 - engineio.server - INFO - v4bPFAjfhFdDjC8oAAAB: Sending packet MESSAGE data 2["welcome",{"message":"Bienvenue sur BioMedical Hub","version":"2.0.0","animation":"fadeIn"}]
+2025-07-25 08:02:59,503 - engineio.server - INFO - v4bPFAjfhFdDjC8oAAAB: Sending packet MESSAGE data 0{"sid":"UBkArEGqk8kJCRCOAAAD"}
+2025-07-25 08:02:59,508 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:59] "GET /socket.io/?EIO=4&transport=polling&t=PX1TnCj&sid=l60fcpicWGGosB3KAAAA HTTP/1.1" 200 -
+2025-07-25 08:02:59,509 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:59] "POST /socket.io/?EIO=4&transport=polling&t=PX1Tn7o&sid=v4bPFAjfhFdDjC8oAAAB HTTP/1.1" 200 -
+2025-07-25 08:02:59,516 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:59,515 - engineio.server - INFO - v4bPFAjfhFdDjC8oAAAB: Received request to upgrade to websocket
+2025-07-25 08:02:59,515 - engineio.server - INFO - l60fcpicWGGosB3KAAAA: Upgrade to websocket successful
+2025-07-25 08:02:59,618 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:59,720 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:59,821 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:02:59,833 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:02:59] "GET /socket.io/?EIO=4&transport=polling&t=PX1TnCo&sid=v4bPFAjfhFdDjC8oAAAB HTTP/1.1" 200 -
+2025-07-25 08:02:59,855 - engineio.server - INFO - v4bPFAjfhFdDjC8oAAAB: Upgrade to websocket successful
+2025-07-25 08:02:59,925 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:00,026 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:00,131 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:00,234 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:00,335 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:00,436 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:00,539 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:00,641 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:00,743 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:00,846 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:00,949 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:01,050 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:01,151 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:01,254 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:01,356 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:01,459 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:01,562 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:01,662 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:01,764 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:01,866 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:01,967 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:02,069 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:02,169 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:02,272 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:02,373 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:02,476 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:02,578 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:02,679 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:02,781 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:02,888 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:02,988 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:03,090 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:03,193 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:03,295 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:03,399 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:03,501 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:03,605 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:03,709 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:03,809 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:03,913 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:04,015 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:04,116 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:04,220 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:04,322 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:04,424 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:04,526 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:04,629 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:04,733 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:04,835 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:04,936 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:05,038 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:05,141 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:05,243 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:05,347 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:05,448 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:05,551 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:05,655 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:05,756 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:05,857 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:05,960 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:06,063 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:06,170 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:06,275 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:06,376 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:06,478 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:06,580 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:06,684 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:06,788 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:06,890 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:06,993 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:07,096 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:07,198 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:07,299 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:07,403 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:07,504 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:07,605 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:07,707 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:07,809 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:07,909 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:08,013 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:08,114 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:08,216 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:08,319 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:08,421 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:08,525 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:08,630 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:08,732 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:08,835 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:08,937 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:09,042 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:09,143 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:09,246 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:09,350 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:09,451 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:09,554 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:09,660 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:09,763 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:09,864 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:09,968 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:10,069 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:10,171 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:10,273 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:10,374 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:10,433 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:03:10] "GET /static/templates/modules/polar.html HTTP/1.1" 200 -
+2025-07-25 08:03:10,475 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:10,576 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:10,678 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:10,779 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:10,880 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:10,982 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:11,085 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:11,188 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:11,290 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:11,391 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:11,496 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:11,598 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:11,701 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:11,803 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:11,905 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:12,008 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:12,109 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:12,213 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:12,316 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:12,419 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:12,457 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:03:12] "GET /static/templates/modules/neurosity.html HTTP/1.1" 200 -
+2025-07-25 08:03:12,521 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:12,622 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:12,725 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:12,828 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:12,929 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:13,032 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:13,134 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:13,242 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:13,345 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:13,448 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:13,552 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:13,654 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:13,758 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:13,859 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:13,962 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:14,066 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:14,169 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:14,272 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:14,376 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:14,477 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:14,580 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:14,684 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:14,761 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:03:14] "GET /static/templates/modules/thermal_camera.html HTTP/1.1" 200 -
+2025-07-25 08:03:14,787 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:14,889 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:14,990 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:15,093 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:15,197 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:15,299 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:15,403 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:15,506 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:15,607 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:15,711 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:15,814 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:15,916 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:16,021 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:16,106 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:03:16] "GET /static/templates/modules/thought_capture.html HTTP/1.1" 200 -
+2025-07-25 08:03:16,123 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:16,225 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:16,326 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:16,430 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:16,535 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:16,638 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:16,739 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:16,842 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:16,944 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:17,046 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:17,150 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:17,253 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:17,356 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:17,458 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:17,560 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:17,661 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:17,766 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:17,869 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:17,970 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:18,072 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:18,175 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:18,278 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:18,381 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:18,483 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:18,585 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:18,688 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:18,790 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:18,892 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:18,995 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:19,097 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:19,200 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:19,302 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:19,405 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:19,507 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:19,609 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:19,711 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:19,812 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:19,915 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:20,017 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:20,118 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:20,223 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:20,325 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:20,426 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:20,529 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:20,632 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:20,733 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:20,803 - __main__ - INFO - 👋 Client déconnecté. Total: 1
+2025-07-25 08:03:20,805 - __main__ - INFO - 👋 Client déconnecté. Total: 0
+2025-07-25 08:03:20,806 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:03:20] "GET /socket.io/?EIO=4&transport=websocket&sid=l60fcpicWGGosB3KAAAA HTTP/1.1" 200 -
+2025-07-25 08:03:20,807 - werkzeug - INFO - 127.0.0.1 - - [25/Jul/2025 08:03:20] "GET /socket.io/?EIO=4&transport=websocket&sid=v4bPFAjfhFdDjC8oAAAB HTTP/1.1" 200 -
+2025-07-25 08:03:20,834 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:20,936 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:21,037 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:21,138 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:21,239 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:21,340 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:21,441 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:21,542 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:21,644 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:21,747 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:21,848 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:21,951 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:22,053 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:22,154 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:22,256 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:22,358 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:22,459 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:22,561 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:22,662 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:22,764 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:22,867 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:22,969 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:23,070 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:23,171 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:23,272 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'
+2025-07-25 08:03:23,373 - modules.dashboard.dashboard_home - ERROR - Erreur dans la boucle de mise à jour: 'DashboardHomeModule' object has no attribute '_calculate_statistics'

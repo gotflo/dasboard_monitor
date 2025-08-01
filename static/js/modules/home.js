@@ -1,6 +1,6 @@
 /**
  * Module Home - Frontend pour la vue d'ensemble en temps réel
- * Version complète avec intégration Gazepoint
+ * Version complète avec intégration Gazepoint et Thought Capture
  */
 
 class HomeModule {
@@ -14,7 +14,8 @@ class HomeModule {
             polar: { connected: false, devices: [] },
             neurosity: { connected: false },
             thermal: { connected: false },
-            gazepoint: { connected: false }
+            gazepoint: { connected: false },
+            thoughtCapture: { ready: true, recording: false, paused: false }
         };
 
         // État de la collecte
@@ -78,6 +79,20 @@ class HomeModule {
             lastUpdate: null
         };
 
+        // État des métriques Thought Capture
+        this.thoughtCaptureState = {
+            recording: false,
+            paused: false,
+            recordingStartTime: null,
+            recordingDuration: 0,
+            audioLevel: 0,
+            totalRecordings: 0,
+            totalDuration: 0,
+            totalSize: 0,
+            waveformData: new Uint8Array(256),
+            lastUpdate: null
+        };
+
         // Points thermiques du visage
         this.thermalPoints = [
             'Nez', 'Bouche', 'Œil_Gauche', 'Œil_Droit',
@@ -102,12 +117,20 @@ class HomeModule {
         this.gazeCtx = null;
         this.gazeAnimationFrame = null;
 
+        // Animation Thought Capture
+        this.audioCanvas = null;
+        this.audioCtx = null;
+        this.audioAnimationFrame = null;
+        this.audioAnalyser = null;
+        this.thoughtTimerInterval = null;
+
         // Timeout pour les indicateurs
         this.neurosityIndicatorTimeout = null;
         this.thermalIndicatorTimeout = null;
         this.gazepointIndicatorTimeout = null;
+        this.thoughtCaptureIndicatorTimeout = null;
 
-        logger.info('Module Home créé avec support Gazepoint');
+        logger.info('Module Home créé avec support Gazepoint et Thought Capture');
     }
 
     init() {
@@ -128,6 +151,9 @@ class HomeModule {
             // Initialiser les visualisations Gazepoint
             this.initGazepointVisualization();
 
+            // Initialiser les visualisations Thought Capture
+            this.initThoughtCaptureVisualization();
+
             // Connecter au WebSocket
             this.connectWebSocket();
 
@@ -141,9 +167,9 @@ class HomeModule {
                 // S'abonner aux broadcasts si possible
                 if (this.wsClient && this.wsClient.socket) {
                     this.wsClient.socket.emit('subscribe_to_broadcast', {
-                        modules: ['polar', 'neurosity', 'thermal', 'gazepoint']
+                        modules: ['polar', 'neurosity', 'thermal', 'gazepoint', 'thought_capture']
                     });
-                    logger.info('Abonnement aux broadcasts demandé (incluant Gazepoint)');
+                    logger.info('Abonnement aux broadcasts demandé (incluant Gazepoint et Thought Capture)');
                 }
             }, 500);
 
@@ -175,6 +201,7 @@ class HomeModule {
         this.updateDeviceStatus('neurosity', false);
         this.updateDeviceStatus('thermal', false);
         this.updateDeviceStatus('gazepoint', false);
+        this.updateThoughtCaptureStatus('ready');
 
         // Masquer la bannière de connexion par défaut
         const banner = document.getElementById('dh-connection-banner');
@@ -232,6 +259,10 @@ class HomeModule {
 
         this.wsClient.on('gazepoint_data_update', (data) => {
             this.handleGazepointDataUpdate(data);
+        });
+
+        this.wsClient.on('thought_capture_data_update', (data) => {
+            this.handleThoughtCaptureDataUpdate(data);
         });
 
         // Connexion/Déconnexion d'appareils
@@ -349,7 +380,32 @@ class HomeModule {
                 this.resetGazepointDisplay();
             });
 
-            logger.info('Listeners broadcast configurés (incluant Gazepoint)');
+            // THOUGHT CAPTURE broadcasts
+            this.wsClient.socket.on('thought_capture_recording_started', (data) => {
+                this.handleThoughtCaptureBroadcast('recording_started', data);
+            });
+
+            this.wsClient.socket.on('thought_capture_recording_stopped', (data) => {
+                this.handleThoughtCaptureBroadcast('recording_stopped', data);
+            });
+
+            this.wsClient.socket.on('thought_capture_recording_paused', (data) => {
+                this.handleThoughtCaptureBroadcast('recording_paused', data);
+            });
+
+            this.wsClient.socket.on('thought_capture_recording_resumed', (data) => {
+                this.handleThoughtCaptureBroadcast('recording_resumed', data);
+            });
+
+            this.wsClient.socket.on('thought_capture_audio_level', (data) => {
+                this.handleThoughtCaptureBroadcast('audio_level', data);
+            });
+
+            this.wsClient.socket.on('thought_capture_stats_update', (data) => {
+                this.handleThoughtCaptureBroadcast('stats_update', data);
+            });
+
+            logger.info('Listeners broadcast configurés (incluant Gazepoint et Thought Capture)');
         }
 
         // Réponse au statut des appareils
@@ -395,6 +451,23 @@ class HomeModule {
                 localStorage.setItem('home_auto_start_monitoring', this.autoStartMonitoring);
                 logger.info(`Monitoring visuel automatique: ${this.autoStartMonitoring ? 'activé' : 'désactivé'}`);
             });
+        }
+
+        // Contrôles Thought Capture
+        const thoughtRecord = document.getElementById('dh-thought-record');
+        const thoughtPause = document.getElementById('dh-thought-pause');
+        const thoughtStop = document.getElementById('dh-thought-stop');
+
+        if (thoughtRecord) {
+            thoughtRecord.addEventListener('click', () => this.toggleThoughtRecording());
+        }
+
+        if (thoughtPause) {
+            thoughtPause.addEventListener('click', () => this.pauseThoughtRecording());
+        }
+
+        if (thoughtStop) {
+            thoughtStop.addEventListener('click', () => this.stopThoughtRecording());
         }
     }
 
@@ -746,7 +819,442 @@ class HomeModule {
         }
     }
 
-    // === GESTION DES ÉVÉNEMENTS GAZEPOINT ===
+    // === INITIALISATION THOUGHT CAPTURE ===
+
+    initThoughtCaptureVisualization() {
+        // Récupérer le canvas pour la visualisation audio
+        this.audioCanvas = document.getElementById('dh-audio-waveform');
+        if (this.audioCanvas) {
+            this.audioCtx = this.audioCanvas.getContext('2d');
+            this.resizeAudioCanvas();
+
+            // Adapter le canvas au redimensionnement
+            window.addEventListener('resize', () => this.resizeAudioCanvas());
+
+            // Démarrer l'animation audio
+            this.startAudioAnimation();
+        }
+
+        // Initialiser les statistiques
+        this.updateThoughtCaptureStats();
+    }
+
+    resizeAudioCanvas() {
+        if (!this.audioCanvas) return;
+
+        const container = this.audioCanvas.parentElement;
+        this.audioCanvas.width = container.clientWidth;
+        this.audioCanvas.height = container.clientHeight;
+    }
+
+    startAudioAnimation() {
+        const animate = () => {
+            if (!this.audioCtx || !this.audioCanvas) return;
+
+            // Effacer le canvas
+            this.audioCtx.fillStyle = '#f8fafc';
+            this.audioCtx.fillRect(0, 0, this.audioCanvas.width, this.audioCanvas.height);
+
+            // Dessiner la forme d'onde
+            this.drawAudioWaveform();
+
+            this.audioAnimationFrame = requestAnimationFrame(animate);
+        };
+
+        animate();
+    }
+
+    drawAudioWaveform() {
+        const ctx = this.audioCtx;
+        const width = this.audioCanvas.width;
+        const height = this.audioCanvas.height;
+        const data = this.thoughtCaptureState.waveformData;
+
+        if (!data || data.length === 0) {
+            // Dessiner une ligne plate si pas de données
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+            return;
+        }
+
+        // Dessiner la forme d'onde
+        const sliceWidth = width / data.length;
+        let x = 0;
+
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        for (let i = 0; i < data.length; i++) {
+            const v = data[i] / 128.0; // Normaliser 0-255 à 0-2
+            const y = v * height / 2;
+
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+
+            x += sliceWidth;
+        }
+
+        ctx.stroke();
+
+        // Dessiner les barres de fréquence si enregistrement actif
+        if (this.thoughtCaptureState.recording) {
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.3)';
+            x = 0;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const barHeight = (data[i] / 255) * height * 0.8;
+
+                ctx.fillRect(x, height - barHeight, sliceWidth * 3, barHeight);
+                x += sliceWidth * 4;
+            }
+        }
+    }
+
+    // === GESTION DES ÉVÉNEMENTS THOUGHT CAPTURE ===
+
+    handleThoughtCaptureBroadcast(eventType, data) {
+        logger.info(`Données Thought Capture ${eventType} reçues:`, data);
+
+        switch (eventType) {
+            case 'recording_started':
+                this.handleThoughtCaptureRecordingStarted(data);
+                break;
+            case 'recording_stopped':
+                this.handleThoughtCaptureRecordingStopped(data);
+                break;
+            case 'recording_paused':
+                this.handleThoughtCaptureRecordingPaused(data);
+                break;
+            case 'recording_resumed':
+                this.handleThoughtCaptureRecordingResumed(data);
+                break;
+            case 'audio_level':
+                this.handleThoughtCaptureAudioLevel(data);
+                break;
+            case 'stats_update':
+                this.handleThoughtCaptureStatsUpdate(data);
+                break;
+        }
+
+        // Afficher l'indicateur live si audio actif
+        if (eventType === 'audio_level' && this.thoughtCaptureState.recording) {
+            const indicator = document.getElementById('dh-audio-indicator');
+            if (indicator) {
+                indicator.style.display = 'flex';
+                clearTimeout(this.thoughtCaptureIndicatorTimeout);
+                this.thoughtCaptureIndicatorTimeout = setTimeout(() => {
+                    indicator.style.display = 'none';
+                }, 2000);
+            }
+        }
+    }
+
+    handleThoughtCaptureRecordingStarted(data) {
+        this.thoughtCaptureState.recording = true;
+        this.thoughtCaptureState.paused = false;
+        this.thoughtCaptureState.recordingStartTime = new Date();
+
+        // Mettre à jour l'interface
+        this.updateThoughtCaptureStatus('recording');
+        this.startThoughtTimer();
+
+        // Mettre à jour les boutons
+        const recordBtn = document.getElementById('dh-thought-record');
+        const pauseBtn = document.getElementById('dh-thought-pause');
+        const stopBtn = document.getElementById('dh-thought-stop');
+
+        if (recordBtn) {
+            recordBtn.classList.add('recording');
+            recordBtn.querySelector('i').className = 'fas fa-microphone';
+        }
+
+        if (pauseBtn) pauseBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = false;
+
+        this.showNotification('Enregistrement audio démarré', 'info');
+    }
+
+    handleThoughtCaptureRecordingStopped(data) {
+        this.thoughtCaptureState.recording = false;
+        this.thoughtCaptureState.paused = false;
+        this.thoughtCaptureState.recordingStartTime = null;
+
+        // Mettre à jour l'interface
+        this.updateThoughtCaptureStatus('ready');
+        this.stopThoughtTimer();
+
+        // Mettre à jour les statistiques
+        if (data.duration) {
+            this.thoughtCaptureState.totalDuration += data.duration;
+        }
+        if (data.size) {
+            this.thoughtCaptureState.totalSize += data.size;
+        }
+        this.thoughtCaptureState.totalRecordings++;
+
+        this.updateThoughtCaptureStats();
+
+        // Réinitialiser les boutons
+        const recordBtn = document.getElementById('dh-thought-record');
+        const pauseBtn = document.getElementById('dh-thought-pause');
+        const stopBtn = document.getElementById('dh-thought-stop');
+
+        if (recordBtn) {
+            recordBtn.classList.remove('recording');
+            recordBtn.querySelector('i').className = 'fas fa-microphone';
+        }
+
+        if (pauseBtn) {
+            pauseBtn.disabled = true;
+            pauseBtn.classList.remove('paused');
+        }
+        if (stopBtn) stopBtn.disabled = true;
+
+        // Réinitialiser la forme d'onde
+        this.thoughtCaptureState.waveformData = new Uint8Array(256);
+
+        this.showNotification('Enregistrement audio terminé', 'success');
+    }
+
+    handleThoughtCaptureRecordingPaused(data) {
+        this.thoughtCaptureState.paused = true;
+        this.updateThoughtCaptureStatus('paused');
+
+        const pauseBtn = document.getElementById('dh-thought-pause');
+        if (pauseBtn) {
+            pauseBtn.classList.add('paused');
+            pauseBtn.querySelector('i').className = 'fas fa-play';
+        }
+    }
+
+    handleThoughtCaptureRecordingResumed(data) {
+        this.thoughtCaptureState.paused = false;
+        this.updateThoughtCaptureStatus('recording');
+
+        const pauseBtn = document.getElementById('dh-thought-pause');
+        if (pauseBtn) {
+            pauseBtn.classList.remove('paused');
+            pauseBtn.querySelector('i').className = 'fas fa-pause';
+        }
+    }
+
+    handleThoughtCaptureAudioLevel(data) {
+        // Mettre à jour le niveau audio
+        if (data.level !== undefined) {
+            this.thoughtCaptureState.audioLevel = data.level;
+            this.updateAudioLevel(data.level);
+        }
+
+        // Mettre à jour la forme d'onde
+        if (data.waveform && Array.isArray(data.waveform)) {
+            this.thoughtCaptureState.waveformData = new Uint8Array(data.waveform);
+        }
+
+        // Mettre à jour l'affichage des dB
+        if (data.level !== undefined) {
+            const dbLevel = this.calculateDbLevel(data.level);
+            this.updateElement('dh-audio-db', `${dbLevel} dB`);
+        }
+    }
+
+    handleThoughtCaptureStatsUpdate(data) {
+        if (data.total_recordings !== undefined) {
+            this.thoughtCaptureState.totalRecordings = data.total_recordings;
+        }
+        if (data.total_duration !== undefined) {
+            this.thoughtCaptureState.totalDuration = data.total_duration;
+        }
+        if (data.total_size !== undefined) {
+            this.thoughtCaptureState.totalSize = data.total_size;
+        }
+
+        this.updateThoughtCaptureStats();
+    }
+
+    handleThoughtCaptureDataUpdate(data) {
+        logger.info('Mise à jour Thought Capture reçue:', data);
+
+        // Traiter selon le type de mise à jour
+        if (data.update_type === 'audio_level') {
+            this.handleThoughtCaptureAudioLevel(data.data);
+        } else if (data.update_type === 'stats') {
+            this.handleThoughtCaptureStatsUpdate(data.data);
+        }
+
+        // Mettre à jour l'état si fourni
+        if (data.state) {
+            this.thoughtCaptureState.recording = data.state.recording;
+            this.thoughtCaptureState.paused = data.state.paused;
+
+            if (data.state.recording) {
+                this.updateThoughtCaptureStatus(data.state.paused ? 'paused' : 'recording');
+            } else {
+                this.updateThoughtCaptureStatus('ready');
+            }
+        }
+    }
+
+    updateThoughtCaptureStatus(status) {
+        const statusElement = document.getElementById('dh-thought-capture-status');
+        if (!statusElement) return;
+
+        const indicator = statusElement.querySelector('.device-indicator');
+        const text = statusElement.querySelector('.status-text');
+
+        if (indicator) {
+            indicator.className = 'device-indicator';
+            switch (status) {
+                case 'recording':
+                    indicator.classList.add('online');
+                    break;
+                case 'paused':
+                    indicator.classList.add('online');
+                    break;
+                case 'ready':
+                default:
+                    indicator.classList.add('offline');
+                    break;
+            }
+        }
+
+        if (text) {
+            switch (status) {
+                case 'recording':
+                    text.textContent = 'Enregistrement...';
+                    break;
+                case 'paused':
+                    text.textContent = 'En pause';
+                    break;
+                case 'ready':
+                default:
+                    text.textContent = 'Prêt';
+                    break;
+            }
+        }
+
+        // Gérer le timer d'enregistrement
+        const timer = document.getElementById('dh-thought-timer');
+        if (timer) {
+            timer.style.display = (status === 'recording' || status === 'paused') ? 'flex' : 'none';
+        }
+    }
+
+    updateAudioLevel(level) {
+        const levelBar = document.getElementById('dh-audio-level');
+        if (levelBar) {
+            // Normaliser le niveau (0-100)
+            const normalizedLevel = Math.min(100, Math.max(0, level));
+            levelBar.style.width = `${normalizedLevel}%`;
+
+            // Changer la couleur selon le niveau
+            if (normalizedLevel < 30) {
+                levelBar.style.background = 'linear-gradient(to right, #10b981, #10b981)';
+            } else if (normalizedLevel < 70) {
+                levelBar.style.background = 'linear-gradient(to right, #10b981, #f59e0b)';
+            } else {
+                levelBar.style.background = 'linear-gradient(to right, #10b981, #f59e0b, #ef4444)';
+            }
+        }
+    }
+
+    calculateDbLevel(level) {
+        if (level <= 0) return '-∞';
+        // Convertir le niveau linéaire en dB
+        const db = 20 * Math.log10(level / 100);
+        return db.toFixed(1);
+    }
+
+    updateThoughtCaptureStats() {
+        // Total des enregistrements
+        this.updateElement('dh-total-recordings', this.thoughtCaptureState.totalRecordings);
+
+        // Durée totale formatée
+        const totalDuration = this.formatDuration(this.thoughtCaptureState.totalDuration);
+        this.updateElement('dh-total-duration', totalDuration);
+
+        // Taille totale formatée
+        const totalSize = this.formatFileSize(this.thoughtCaptureState.totalSize);
+        this.updateElement('dh-total-size', totalSize);
+    }
+
+    startThoughtTimer() {
+        if (this.thoughtTimerInterval) return;
+
+        const updateTimer = () => {
+            if (!this.thoughtCaptureState.recordingStartTime) return;
+
+            const elapsed = Math.floor((new Date() - this.thoughtCaptureState.recordingStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+
+            const timerText = document.querySelector('#dh-thought-timer .timer-text');
+            if (timerText) {
+                timerText.textContent = `${minutes}:${seconds}`;
+            }
+        };
+
+        updateTimer(); // Mise à jour immédiate
+        this.thoughtTimerInterval = setInterval(updateTimer, 1000);
+    }
+
+    stopThoughtTimer() {
+        if (this.thoughtTimerInterval) {
+            clearInterval(this.thoughtTimerInterval);
+            this.thoughtTimerInterval = null;
+        }
+
+        const timerText = document.querySelector('#dh-thought-timer .timer-text');
+        if (timerText) {
+            timerText.textContent = '00:00';
+        }
+    }
+
+    toggleThoughtRecording() {
+        if (!this.wsClient || !this.wsClient.socket) {
+            this.showNotification('WebSocket non connecté', 'error');
+            return;
+        }
+
+        if (this.thoughtCaptureState.recording) {
+            // Si déjà en cours, ne rien faire (utiliser stop pour arrêter)
+            return;
+        }
+
+        // Émettre l'événement de démarrage
+        this.wsClient.socket.emit('thought_capture_start_recording', {});
+    }
+
+    pauseThoughtRecording() {
+        if (!this.wsClient || !this.wsClient.socket) return;
+
+        const event = this.thoughtCaptureState.paused ?
+            'thought_capture_resume_recording' :
+            'thought_capture_pause_recording';
+
+        this.wsClient.socket.emit(event, {});
+    }
+
+    stopThoughtRecording() {
+        if (!this.wsClient || !this.wsClient.socket) return;
+
+        this.wsClient.socket.emit('thought_capture_stop_recording', {});
+    }
+
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 MB';
+        const mb = bytes / (1024 * 1024);
+        return mb.toFixed(1) + ' MB';
+    }
+
+    // === GESTION DES ÉVÉNEMENTS GAZEPOINT (existant) ===
 
     handleGazepointBroadcast(dataType, data) {
         logger.info(`Données Gazepoint ${dataType} reçues:`, data);
@@ -964,7 +1472,7 @@ class HomeModule {
         }
     }
 
-    // === GESTION DES ÉVÉNEMENTS THERMAL ===
+    // === GESTION DES ÉVÉNEMENTS THERMAL (existant) ===
 
     handleThermalBroadcast(data) {
         logger.info('Données thermiques reçues:', data);
@@ -1170,7 +1678,7 @@ class HomeModule {
         });
     }
 
-    // === GESTION DES ÉVÉNEMENTS BROADCAST POLAR ===
+    // === GESTION DES ÉVÉNEMENTS BROADCAST POLAR (existant) ===
 
     handlePolarBroadcast(deviceType, data) {
         logger.info(`Données Polar ${deviceType} reçues:`, data);
@@ -1236,7 +1744,7 @@ class HomeModule {
         this.showNotification(`Polar ${deviceType.toUpperCase()} déconnecté`, 'info');
     }
 
-    // === GESTION DES ÉVÉNEMENTS BROADCAST NEUROSITY ===
+    // === GESTION DES ÉVÉNEMENTS BROADCAST NEUROSITY (existant) ===
 
     handleNeurosityBroadcast(dataType, data) {
         if (!data) return;
@@ -1298,7 +1806,7 @@ class HomeModule {
         }
     }
 
-    // === GESTION DES ÉVÉNEMENTS MODULE HOME ===
+    // === GESTION DES ÉVÉNEMENTS MODULE HOME (existant) ===
 
     handleDashboardState(data) {
         // Mettre à jour l'état global du dashboard
@@ -1322,6 +1830,12 @@ class HomeModule {
                 } else if (module === 'gazepoint' && deviceData.connected !== undefined) {
                     this.devicesState.gazepoint.connected = deviceData.connected;
                     this.updateDeviceStatus('gazepoint', deviceData.connected);
+                } else if (module === 'thought_capture' && deviceData.ready !== undefined) {
+                    this.devicesState.thoughtCapture.ready = deviceData.ready;
+                    this.devicesState.thoughtCapture.recording = deviceData.recording;
+                    this.devicesState.thoughtCapture.paused = deviceData.paused;
+                    const status = deviceData.recording ? (deviceData.paused ? 'paused' : 'recording') : 'ready';
+                    this.updateThoughtCaptureStatus(status);
                 }
             }
         }
@@ -1357,6 +1871,19 @@ class HomeModule {
                 }
             }
         }
+
+        // Mettre à jour les stats Thought Capture si présentes
+        if (sessionData.total_recordings !== undefined) {
+            this.thoughtCaptureState.totalRecordings = sessionData.total_recordings;
+        }
+        if (sessionData.total_recording_duration !== undefined) {
+            this.thoughtCaptureState.totalDuration = sessionData.total_recording_duration;
+        }
+        if (sessionData.total_recording_size !== undefined) {
+            this.thoughtCaptureState.totalSize = sessionData.total_recording_size;
+        }
+
+        this.updateThoughtCaptureStats();
     }
 
     handlePolarDataUpdate(data) {
@@ -1430,6 +1957,15 @@ class HomeModule {
             this.updateDeviceStatus('gazepoint', data.gazepoint.connected);
         }
 
+        if (data.thought_capture) {
+            this.devicesState.thoughtCapture.ready = data.thought_capture.ready;
+            this.devicesState.thoughtCapture.recording = data.thought_capture.recording;
+            this.devicesState.thoughtCapture.paused = data.thought_capture.paused;
+            const status = data.thought_capture.recording ?
+                (data.thought_capture.paused ? 'paused' : 'recording') : 'ready';
+            this.updateThoughtCaptureStatus(status);
+        }
+
         // Afficher/masquer la bannière
         const banner = document.getElementById('dh-connection-banner');
         if (banner) {
@@ -1442,7 +1978,7 @@ class HomeModule {
         }
     }
 
-    // === MISE À JOUR DE L'INTERFACE POLAR ===
+    // === MISE À JOUR DE L'INTERFACE POLAR (existant) ===
 
     updateBPMCard(data) {
         const bpmValue = document.getElementById('dh-bpm-value');
@@ -1532,7 +2068,7 @@ class HomeModule {
         }
     }
 
-    // === MISE À JOUR DE L'INTERFACE NEUROSITY ===
+    // === MISE À JOUR DE L'INTERFACE NEUROSITY (existant) ===
 
     updateCalmCircle(value) {
         // Mettre à jour la valeur
@@ -1678,7 +2214,7 @@ class HomeModule {
         }
     }
 
-    // === GRAPHIQUES ===
+    // === GRAPHIQUES (existant) ===
 
     updateCharts(graphData) {
         // Mettre à jour le graphique BPM
@@ -1702,7 +2238,7 @@ class HomeModule {
         }
     }
 
-    // === COLLECTION ===
+    // === COLLECTION (existant) ===
 
     toggleCollection() {
         if (this.collectionState.isCollecting) {
@@ -1964,7 +2500,7 @@ class HomeModule {
         }
     }
 
-    // === TIMER ===
+    // === TIMER (existant) ===
 
     startTimer() {
         if (this.collectionState.timerInterval) return;
@@ -2059,7 +2595,15 @@ class HomeModule {
     formatDuration(seconds) {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
-        return `${mins}m ${secs}s`;
+        if (mins === 0) {
+            return `${secs}s`;
+        } else if (mins < 60) {
+            return `${mins}m ${secs}s`;
+        } else {
+            const hours = Math.floor(mins / 60);
+            const remainingMins = mins % 60;
+            return `${hours}h ${remainingMins}m`;
+        }
     }
 
     showNotification(message, type = 'info') {
@@ -2102,6 +2646,11 @@ class HomeModule {
             this.initGazepointVisualization();
         }
 
+        // Réinitialiser la visualisation Thought Capture
+        if (!this.audioCanvas) {
+            this.initThoughtCaptureVisualization();
+        }
+
         // Redemander le statut des appareils
         this.requestDevicesStatus();
     }
@@ -2114,6 +2663,12 @@ class HomeModule {
         if (this.gazeAnimationFrame) {
             cancelAnimationFrame(this.gazeAnimationFrame);
             this.gazeAnimationFrame = null;
+        }
+
+        // Arrêter l'animation audio
+        if (this.audioAnimationFrame) {
+            cancelAnimationFrame(this.audioAnimationFrame);
+            this.audioAnimationFrame = null;
         }
     }
 
@@ -2128,10 +2683,19 @@ class HomeModule {
         // Arrêter le timer
         this.stopTimer();
 
+        // Arrêter le timer thought capture
+        this.stopThoughtTimer();
+
         // Arrêter l'animation du regard
         if (this.gazeAnimationFrame) {
             cancelAnimationFrame(this.gazeAnimationFrame);
             this.gazeAnimationFrame = null;
+        }
+
+        // Arrêter l'animation audio
+        if (this.audioAnimationFrame) {
+            cancelAnimationFrame(this.audioAnimationFrame);
+            this.audioAnimationFrame = null;
         }
 
         // Détruire les graphiques

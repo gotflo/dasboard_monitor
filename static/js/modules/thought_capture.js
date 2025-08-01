@@ -1,5 +1,5 @@
 /**
- * Module Capture de Pensée - Version corrigée avec gestion robuste du template
+ * Module Capture de Pensée - Version corrigée avec gestion robuste du template et émission WebSocket
  * Tous les éléments DOM utilisent le préfixe thought_ pour éviter les conflits
  */
 
@@ -16,6 +16,7 @@ class ThoughtCaptureModule {
         this.thought_recordings = [];
         this.audioPermissionsChecked = false;
         this.isInitialized = false;
+        this.wsClient = null;
 
         // Stocker le template HTML comme string pour éviter les problèmes de DOM
         this.recordingItemTemplateHTML = `
@@ -60,6 +61,9 @@ class ThoughtCaptureModule {
         console.log('Initialisation du module Capture de Pensée (Simple)');
 
         try {
+            // Récupérer le client WebSocket
+            this.wsClient = window.dashboard?.wsClient;
+
             // Ne pas réinitialiser le timer si un enregistrement est en cours
             if (!this.thought_isRecording) {
                 // Nettoyer tout timer existant
@@ -104,6 +108,9 @@ class ThoughtCaptureModule {
                 this.updateRecordingUI(true);
             }
 
+            // Émettre les statistiques initiales
+            this.emitStatsUpdate();
+
             console.log('Module initialisé');
         } catch (error) {
             console.error('Erreur:', error);
@@ -119,6 +126,9 @@ class ThoughtCaptureModule {
             console.log(`${this.thought_recordings.length} fichiers trouvés`);
 
             this.renderRecordings();
+
+            // Calculer et émettre les statistiques
+            this.calculateAndEmitStats();
         } catch (error) {
             console.error('Erreur chargement:', error);
             this.thought_recordings = [];
@@ -153,6 +163,33 @@ class ThoughtCaptureModule {
             btnPause.removeEventListener('click', this.togglePauseHandler);
             this.togglePauseHandler = () => this.togglePause();
             btnPause.addEventListener('click', this.togglePauseHandler);
+        }
+
+        // Écouter les événements WebSocket pour les contrôles distants
+        if (this.wsClient && this.wsClient.socket) {
+            this.wsClient.socket.on('thought_capture_start_recording', () => {
+                if (!this.thought_isRecording) {
+                    this.startRecording();
+                }
+            });
+
+            this.wsClient.socket.on('thought_capture_stop_recording', () => {
+                if (this.thought_isRecording) {
+                    this.stopRecording();
+                }
+            });
+
+            this.wsClient.socket.on('thought_capture_pause_recording', () => {
+                if (this.thought_isRecording && !this.thought_isPaused) {
+                    this.togglePause();
+                }
+            });
+
+            this.wsClient.socket.on('thought_capture_resume_recording', () => {
+                if (this.thought_isRecording && this.thought_isPaused) {
+                    this.togglePause();
+                }
+            });
         }
 
         this.isInitialized = true;
@@ -217,6 +254,9 @@ class ThoughtCaptureModule {
             this.startTimer();
             this.startAudioVisualization(stream);
 
+            // Émettre l'événement de démarrage
+            this.emitRecordingStarted();
+
             console.log('Enregistrement démarré');
         } catch (error) {
             console.error('Erreur:', error);
@@ -226,6 +266,8 @@ class ThoughtCaptureModule {
 
     stopRecording() {
         if (this.thought_mediaRecorder && this.thought_isRecording) {
+            const duration = Math.floor((Date.now() - this.thought_recordingStartTime) / 1000);
+
             this.thought_mediaRecorder.stop();
             this.thought_isRecording = false;
             this.thought_isPaused = false;
@@ -244,6 +286,9 @@ class ThoughtCaptureModule {
             // Arrêter la visualisation
             this.stopAudioVisualization();
 
+            // Émettre l'événement d'arrêt (la taille sera émise après la sauvegarde)
+            this.emitRecordingStopped(duration);
+
             console.log('Enregistrement arrêté');
         }
     }
@@ -260,12 +305,18 @@ class ThoughtCaptureModule {
             btnPause.classList.add('thought_paused');
             status.textContent = 'En pause';
             status.classList.add('thought_paused');
+
+            // Émettre l'événement de pause
+            this.emitRecordingPaused();
         } else {
             this.thought_mediaRecorder.resume();
             this.thought_isPaused = false;
             btnPause.classList.remove('thought_paused');
             status.textContent = 'Enregistrement...';
             status.classList.remove('thought_paused');
+
+            // Émettre l'événement de reprise
+            this.emitRecordingResumed();
         }
     }
 
@@ -409,6 +460,9 @@ class ThoughtCaptureModule {
                 if (audioLevel) {
                     audioLevel.style.width = `${level}%`;
                 }
+
+                // Émettre le niveau audio via WebSocket
+                this.emitAudioLevel(level, dataArray);
             };
 
             draw();
@@ -460,7 +514,7 @@ class ThoughtCaptureModule {
             const result = await response.json();
             console.log('Fichier sauvegardé:', result.filename);
 
-            // Recharger la liste
+            // Recharger la liste et recalculer les stats
             await this.loadRecordings();
 
             this.showNotification('Enregistrement sauvegardé !', 'success');
@@ -580,7 +634,7 @@ class ThoughtCaptureModule {
                     throw new Error('Erreur serveur');
                 }
 
-                // Recharger la liste
+                // Recharger la liste et recalculer les stats
                 await this.loadRecordings();
 
                 this.showNotification('Enregistrement supprimé', 'info');
@@ -619,6 +673,139 @@ class ThoughtCaptureModule {
                 }
             }, 300);
         }, 3000);
+    }
+
+    // === MÉTHODES D'ÉMISSION WEBSOCKET ===
+
+    emitRecordingStarted() {
+        if (this.wsClient && this.wsClient.socket) {
+            this.wsClient.socket.emit('thought_capture_recording_started', {
+                timestamp: new Date().toISOString()
+            });
+        }
+    }
+
+    emitRecordingStopped(duration) {
+        if (this.wsClient && this.wsClient.socket) {
+            // Calculer la taille approximative (sera mise à jour après la sauvegarde)
+            const estimatedSize = duration * 16000; // ~16KB par seconde pour l'audio webm
+
+            this.wsClient.socket.emit('thought_capture_recording_stopped', {
+                duration: duration,
+                size: estimatedSize,
+                timestamp: new Date().toISOString()
+            });
+        }
+    }
+
+    emitRecordingPaused() {
+        if (this.wsClient && this.wsClient.socket) {
+            this.wsClient.socket.emit('thought_capture_recording_paused', {
+                timestamp: new Date().toISOString()
+            });
+        }
+    }
+
+    emitRecordingResumed() {
+        if (this.wsClient && this.wsClient.socket) {
+            this.wsClient.socket.emit('thought_capture_recording_resumed', {
+                timestamp: new Date().toISOString()
+            });
+        }
+    }
+
+    emitAudioLevel(level, waveformData) {
+        if (this.wsClient && this.wsClient.socket) {
+            // Throttle les émissions (maximum 10 par seconde)
+            if (!this.lastAudioLevelEmit || Date.now() - this.lastAudioLevelEmit > 100) {
+                this.lastAudioLevelEmit = Date.now();
+
+                // Convertir le Uint8Array en array normal et échantillonner
+                const waveform = [];
+                const step = Math.floor(waveformData.length / 64); // Réduire à 64 échantillons
+                for (let i = 0; i < waveformData.length; i += step) {
+                    waveform.push(waveformData[i]);
+                }
+
+                this.wsClient.socket.emit('thought_capture_audio_level', {
+                    level: level,
+                    frequency: this.calculateDominantFrequency(waveformData),
+                    waveform: waveform,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+    }
+
+    emitStatsUpdate() {
+        if (this.wsClient && this.wsClient.socket) {
+            const stats = this.calculateStats();
+            this.wsClient.socket.emit('thought_capture_stats_update', stats);
+        }
+    }
+
+    calculateStats() {
+        let totalDuration = 0;
+        let totalSize = 0;
+
+        this.thought_recordings.forEach(recording => {
+            totalDuration += recording.duration || 0;
+            totalSize += recording.size || 0;
+        });
+
+        return {
+            total_recordings: this.thought_recordings.length,
+            total_duration: totalDuration,
+            total_size: totalSize,
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    calculateAndEmitStats() {
+        const stats = this.calculateStats();
+        this.emitStatsUpdate();
+
+        // Mettre à jour l'interface locale aussi si on est sur la page thought capture
+        const totalRecordingsEl = document.querySelector('.thought_stats-value[data-stat="total"]');
+        const totalDurationEl = document.querySelector('.thought_stats-value[data-stat="duration"]');
+        const totalSizeEl = document.querySelector('.thought_stats-value[data-stat="size"]');
+
+        if (totalRecordingsEl) totalRecordingsEl.textContent = stats.total_recordings;
+        if (totalDurationEl) totalDurationEl.textContent = this.formatDuration(stats.total_duration);
+        if (totalSizeEl) totalSizeEl.textContent = this.formatSize(stats.total_size);
+    }
+
+    calculateDominantFrequency(dataArray) {
+        // Calcul simple de la fréquence dominante
+        let maxValue = 0;
+        let maxIndex = 0;
+
+        for (let i = 0; i < dataArray.length; i++) {
+            if (dataArray[i] > maxValue) {
+                maxValue = dataArray[i];
+                maxIndex = i;
+            }
+        }
+
+        // Convertir l'index en fréquence approximative
+        const nyquist = this.thought_audioContext ? this.thought_audioContext.sampleRate / 2 : 22050;
+        const frequency = (maxIndex / dataArray.length) * nyquist;
+
+        return Math.round(frequency);
+    }
+
+    formatDuration(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        } else if (minutes > 0) {
+            return `${minutes}m ${secs}s`;
+        } else {
+            return `${secs}s`;
+        }
     }
 
     cleanup() {
