@@ -62,6 +62,20 @@ class PolarModule {
             h10: 0,
             verity: 0
         };
+
+        // État du scan (NOUVEAU)
+        this.scanState = {
+            isScanning: false,
+            retryCount: 0,
+            maxRetries: 3,
+            scanTimeout: null
+        };
+
+        // État du modal (NOUVEAU - pour gérer l'état d'affichage)
+        this.modalState = {
+            isOpen: false,
+            isShowingResults: false
+        };
     }
 
     /**
@@ -150,7 +164,7 @@ class PolarModule {
         // Bouton de connexion
         const connectBtn = document.getElementById('polar_connectBtn');
         if (connectBtn) {
-            connectBtn.addEventListener('click', () => this.scanForDevices());
+            connectBtn.addEventListener('click', () => this.openConnectionModal());
         }
 
         // Bouton de déconnexion
@@ -168,7 +182,7 @@ class PolarModule {
         const closeBtn = document.getElementById('polar_modalCloseBtn');
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
-                this.forceShowMonitoring();
+                this.closeConnectionModal();
             });
         }
 
@@ -176,8 +190,8 @@ class PolarModule {
         const modal = document.getElementById('polar_connectionModal');
         if (modal) {
             modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    this.forceShowMonitoring();
+                if (e.target === modal && this.modalState.isOpen) {
+                    this.closeConnectionModal();
                 }
             });
         }
@@ -378,8 +392,16 @@ class PolarModule {
         this.cleanupWebSocketEvents();
 
         // Scan devices
-        this.wsClient.on('polar_scan_started', (data) => console.log('Scan démarré:', data));
-        this.wsClient.on('devices_found', (data) => this.handleDevicesFound(data));
+        this.wsClient.on('polar_scan_started', (data) => {
+            console.log('Scan démarré:', data);
+            this.scanState.isScanning = true;
+        });
+
+        this.wsClient.on('devices_found', (data) => {
+            this.handleDevicesFound(data);
+            this.scanState.isScanning = false;
+        });
+
         this.wsClient.on('scan_retry', (data) => this.handleScanRetry(data));
 
         // Connexion/Déconnexion
@@ -426,6 +448,37 @@ class PolarModule {
     }
 
     /**
+     * Ouvre le modal de connexion et lance le scan (NOUVELLE MÉTHODE)
+     */
+    openConnectionModal() {
+        console.log('Ouverture du modal de connexion');
+
+        // Réinitialiser l'état du modal
+        this.modalState.isOpen = true;
+        this.modalState.isShowingResults = false;
+
+        // Réinitialiser le modal complètement
+        const modal = document.getElementById('polar_connectionModal');
+        if (modal) {
+            // Supprimer tous les styles inline qui pourraient avoir été ajoutés
+            modal.removeAttribute('style');
+
+            // S'assurer que le modal est dans un état propre
+            modal.style.display = '';
+            modal.style.opacity = '';
+            modal.style.visibility = '';
+
+            // Ajouter la classe active après un court délai pour l'animation
+            setTimeout(() => {
+                modal.classList.add('polar_active');
+            }, 10);
+        }
+
+        // Lancer le scan
+        this.scanForDevices();
+    }
+
+    /**
      * Lance le scan Bluetooth pour trouver les appareils
      */
     async scanForDevices() {
@@ -434,19 +487,43 @@ class PolarModule {
             return;
         }
 
+        // Empêcher le double scan
+        if (this.scanState.isScanning) {
+            console.log('Scan déjà en cours');
+            return;
+        }
+
         const modal = document.getElementById('polar_connectionModal');
         const devicesList = document.getElementById('polar_devicesList');
         const noDevices = document.getElementById('polar_noDevices');
 
-        if (!modal || !devicesList) return;
+        if (!devicesList) return;
 
-        // Réinitialiser
+        // Réinitialiser l'état
+        this.scanState.isScanning = true;
+        this.scanState.retryCount = 0;
         devicesList.innerHTML = '';
-        noDevices.style.display = 'none';
+        if (noDevices) {
+            noDevices.style.display = 'none';
+        }
+
+        // S'assurer que le modal est visible
+        if (modal && !this.modalState.isOpen) {
+            this.modalState.isOpen = true;
+            modal.removeAttribute('style');
+            modal.classList.add('polar_active');
+        }
 
         // Afficher le chargement
         this.showLoading('Recherche des appareils...', 'Scan Bluetooth en cours');
-        modal.classList.add('polar_active');
+
+        // Timeout de sécurité pour éviter le blocage
+        this.scanState.scanTimeout = setTimeout(() => {
+            if (this.scanState.isScanning) {
+                console.log('Timeout du scan - forçage de l\'arrêt');
+                this.handleScanTimeout();
+            }
+        }, 35000); // 35 secondes de timeout global
 
         // Demander le scan au backend avec retry automatique
         this.wsClient.emitToModule('polar', 'scan_devices', {
@@ -456,34 +533,179 @@ class PolarModule {
     }
 
     /**
+     * Relance une recherche d'appareils (NOUVELLE MÉTHODE)
+     */
+    retryConnection() {
+        console.log('Relance de la recherche d\'appareils');
+
+        // Réinitialiser l'état du scan
+        this.scanState.isScanning = false;
+        this.scanState.retryCount = 0;
+
+        // Nettoyer le timeout s'il existe
+        if (this.scanState.scanTimeout) {
+            clearTimeout(this.scanState.scanTimeout);
+            this.scanState.scanTimeout = null;
+        }
+
+        // Cacher le message "aucun appareil"
+        const noDevices = document.getElementById('polar_noDevices');
+        if (noDevices) {
+            noDevices.style.display = 'none';
+        }
+
+        // S'assurer que le modal est toujours ouvert
+        this.modalState.isOpen = true;
+
+        // Relancer le scan
+        this.scanForDevices();
+    }
+
+    /**
+     * Gère le timeout du scan (NOUVELLE MÉTHODE)
+     */
+    handleScanTimeout() {
+        console.log('Timeout du scan - affichage de l\'option de retry');
+
+        // Marquer le scan comme terminé
+        this.scanState.isScanning = false;
+
+        // Cacher le chargement
+        this.hideLoading();
+
+        // Nettoyer le timeout
+        if (this.scanState.scanTimeout) {
+            clearTimeout(this.scanState.scanTimeout);
+            this.scanState.scanTimeout = null;
+        }
+
+        // S'assurer que le modal reste visible
+        const modal = document.getElementById('polar_connectionModal');
+        if (modal && this.modalState.isOpen) {
+            modal.removeAttribute('style');
+            modal.classList.add('polar_active');
+        }
+
+        // Afficher le message d'erreur avec option de retry
+        const devicesList = document.getElementById('polar_devicesList');
+        const noDevices = document.getElementById('polar_noDevices');
+
+        if (devicesList) {
+            devicesList.innerHTML = '';
+        }
+
+        if (noDevices) {
+            // Mettre à jour le message
+            const messageEl = noDevices.querySelector('p');
+            if (messageEl) {
+                messageEl.textContent = 'La recherche a expiré. Vérifiez que vos appareils sont allumés et réessayez.';
+            }
+            noDevices.style.display = 'block';
+        }
+
+        this.showToast('Timeout de la recherche. Veuillez réessayer.', 'warning');
+    }
+
+    /**
+     * Ferme la modal de connexion (NOUVELLE MÉTHODE)
+     */
+    closeConnectionModal() {
+        console.log('Fermeture de la modal de connexion');
+
+        const modal = document.getElementById('polar_connectionModal');
+        if (modal) {
+            modal.classList.remove('polar_active');
+
+            // Attendre la fin de l'animation avant de masquer complètement
+            setTimeout(() => {
+                if (!this.modalState.isOpen) {
+                    modal.style.display = 'none';
+                }
+            }, 300);
+        }
+
+        // Mettre à jour l'état
+        this.modalState.isOpen = false;
+        this.modalState.isShowingResults = false;
+
+        // Nettoyer l'état du scan
+        this.scanState.isScanning = false;
+
+        // Nettoyer le timeout s'il existe
+        if (this.scanState.scanTimeout) {
+            clearTimeout(this.scanState.scanTimeout);
+            this.scanState.scanTimeout = null;
+        }
+
+        // Cacher le chargement
+        this.hideLoading();
+    }
+
+    /**
      * Gère la liste des appareils trouvés
      */
     handleDevicesFound(data) {
         console.log('Appareils trouvés:', data);
 
+        // Marquer le scan comme terminé
+        this.scanState.isScanning = false;
+        this.modalState.isShowingResults = true;
+
+        // Nettoyer le timeout
+        if (this.scanState.scanTimeout) {
+            clearTimeout(this.scanState.scanTimeout);
+            this.scanState.scanTimeout = null;
+        }
+
         this.hideLoading();
+
+        // S'assurer que le modal est toujours visible
+        const modal = document.getElementById('polar_connectionModal');
+        if (modal && this.modalState.isOpen) {
+            modal.removeAttribute('style');
+            modal.classList.add('polar_active');
+            modal.style.display = '';
+            modal.style.opacity = '';
+            modal.style.visibility = '';
+        }
 
         const devicesList = document.getElementById('polar_devicesList');
         const noDevices = document.getElementById('polar_noDevices');
 
         if (!data.devices || data.devices.length === 0) {
-            noDevices.style.display = 'block';
-            devicesList.innerHTML = '';
+            // Aucun appareil trouvé
+            if (noDevices) {
+                noDevices.style.display = 'block';
 
-            // Afficher le message si présent
-            if (data.message) {
+                // Personnaliser le message
                 const messageEl = noDevices.querySelector('p');
                 if (messageEl) {
-                    messageEl.textContent = data.message;
+                    messageEl.textContent = data.message || 'Aucun appareil Polar détecté. Vérifiez que vos appareils sont allumés et en mode appairage.';
+                }
+
+                // S'assurer que le bouton de retry est visible et fonctionnel
+                const retryBtn = noDevices.querySelector('button');
+                if (retryBtn) {
+                    retryBtn.style.display = 'inline-flex';
+                    retryBtn.disabled = false;
                 }
             }
-        } else {
-            noDevices.style.display = 'none';
-            devicesList.innerHTML = '';
 
-            data.devices.forEach(device => {
-                this.addDeviceToModal(device);
-            });
+            if (devicesList) {
+                devicesList.innerHTML = '';
+            }
+        } else {
+            // Des appareils ont été trouvés
+            if (noDevices) {
+                noDevices.style.display = 'none';
+            }
+
+            if (devicesList) {
+                devicesList.innerHTML = '';
+                data.devices.forEach(device => {
+                    this.addDeviceToModal(device);
+                });
+            }
         }
     }
 
@@ -501,6 +723,9 @@ class PolarModule {
 
         // Afficher un toast informatif
         this.showToast(data.message, 'info');
+
+        // Mettre à jour le compteur de retry
+        this.scanState.retryCount = data.attempt || this.scanState.retryCount;
     }
 
     /**
@@ -704,7 +929,7 @@ class PolarModule {
         const elements = {
             // Valeurs principales
             [`${prefix}HeartRate`]: '--',
-            [`${prefix}DeviceId`]: 'Non connecté',
+            [`${prefix}DeviceId`]: '--',
 
             // RR Intervals
             [`${prefix}LastRR`]: '--',
@@ -768,15 +993,16 @@ class PolarModule {
         const connectionModal = document.getElementById('polar_connectionModal');
         if (connectionModal) {
             connectionModal.classList.remove('polar_active');
-            connectionModal.style.display = 'none';
-            connectionModal.style.opacity = '0';
-            connectionModal.style.visibility = 'hidden';
+            // Ne plus ajouter de styles inline qui empêchent la réouverture
+            // connectionModal.style.display = 'none';
+            // connectionModal.style.opacity = '0';
+            // connectionModal.style.visibility = 'hidden';
         }
 
         const downloadModal = document.getElementById('polar_downloadModal');
         if (downloadModal) {
             downloadModal.classList.remove('polar_active');
-            downloadModal.style.display = 'none';
+            // downloadModal.style.display = 'none';
         }
 
         // Cacher l'overlay de chargement
@@ -798,33 +1024,56 @@ class PolarModule {
             moduleContainer.style.visibility = 'visible';
         }
 
+        // Nettoyer l'état du scan et du modal
+        this.scanState.isScanning = false;
+        this.modalState.isOpen = false;
+        this.modalState.isShowingResults = false;
+
+        if (this.scanState.scanTimeout) {
+            clearTimeout(this.scanState.scanTimeout);
+            this.scanState.scanTimeout = null;
+        }
+
         // Mettre à jour l'UI
         this.updateUI();
 
         console.log('Interface de monitoring forcée à l\'affichage');
     }
 
+
     /**
-     * Gère la connexion d'un appareil
-     */
-    handleDeviceConnected(deviceType, data) {
-        console.log(`${deviceType} connecté:`, data);
+ * Gère la connexion d'un appareil
+ */
+handleDeviceConnected(deviceType, data) {
+    console.log(`${deviceType} connecté:`, data);
 
-        if (this.devices[deviceType].connected) {
-            console.log(`${deviceType} déjà marqué comme connecté`);
-            return;
-        }
-
-        this.devices[deviceType].connected = true;
-        this.devices[deviceType].collecting = true;
-
-        // Mettre à jour l'UI
-        this.updateDeviceUI(deviceType, true);
-
-        // Fermer la modal immédiatement
-        this.forceShowMonitoring();
+    if (this.devices[deviceType].connected) {
+        console.log(`${deviceType} déjà marqué comme connecté`);
+        return;
     }
 
+    this.devices[deviceType].connected = true;
+    this.devices[deviceType].collecting = true;
+
+    // AJOUT: Stocker les informations de l'appareil si disponibles
+    if (data.device_info) {
+        if (!this.devices[deviceType].data) {
+            this.devices[deviceType].data = {};
+        }
+        this.devices[deviceType].data.device_info = data.device_info;
+
+        // Si on a un formatted_id, le stocker aussi au niveau racine pour compatibilité
+        if (data.device_info.formatted_id) {
+            this.devices[deviceType].data.formatted_device_id = data.device_info.formatted_id;
+        }
+    }
+
+    // Mettre à jour l'UI
+    this.updateDeviceUI(deviceType, true);
+
+    // Fermer la modal immédiatement
+    this.forceShowMonitoring();
+}
     /**
      * Gère la déconnexion d'un appareil
      */
@@ -908,6 +1157,31 @@ class PolarModule {
      */
     updateDeviceData(deviceType, data) {
         const prefix = `polar_${deviceType}`;
+
+        // Mise à jour de l'ID de l'appareil
+    const deviceIdEl = document.getElementById(`${prefix}DeviceId`);
+    if (deviceIdEl) {
+        // Chercher l'ID dans différents endroits possibles
+        let deviceId = null;
+
+        // Option 1: formatted_device_id au niveau racine
+        if (data.formatted_device_id) {
+            deviceId = data.formatted_device_id;
+        }
+        // Option 2: dans device_info
+        else if (data.device_info?.formatted_id) {
+            deviceId = data.device_info.formatted_id;
+        }
+        // Option 3: device_info simple
+        else if (data.device_info?.device_id) {
+            // Formater l'ID si nécessaire
+            deviceId = this.formatDeviceId(data.device_info.device_id);
+        }
+
+        if (deviceId && deviceId !== "Non connecté") {
+            deviceIdEl.textContent = deviceId;
+        }
+    }
 
         // BPM
         const heartRateEl = document.getElementById(`${prefix}HeartRate`);
@@ -1412,57 +1686,86 @@ class PolarModule {
     /**
      * Met à jour l'UI d'un appareil
      */
-    updateDeviceUI(deviceType, connected) {
-        const card = document.getElementById(`polar_${deviceType}Card`);
-        const statusEl = document.getElementById(`polar_${deviceType}Status`);
-        const deviceIdEl = document.getElementById(`polar_${deviceType}DeviceId`);
+/**
+ * Met à jour l'UI d'un appareil
+ */
+updateDeviceUI(deviceType, connected) {
+    const card = document.getElementById(`polar_${deviceType}Card`);
+    const statusEl = document.getElementById(`polar_${deviceType}Status`);
+    const deviceIdEl = document.getElementById(`polar_${deviceType}DeviceId`);
 
-        if (card) {
-            if (connected) {
-                card.classList.remove('polar_inactive');
-                card.classList.add('polar_active');
-            } else {
-                card.classList.remove('polar_active');
-                card.classList.add('polar_inactive');
-            }
-        }
-
-        if (statusEl) {
-            const statusDot = statusEl.querySelector('.polar_status-dot');
-            const statusText = statusEl.querySelector('span:last-child');
-
-            if (connected) {
-                statusDot.classList.add('polar_connected');
-                statusText.textContent = 'Connecté';
-            } else {
-                statusDot.classList.remove('polar_connected');
-                statusText.textContent = 'Déconnecté';
-            }
-        }
-
-        if (deviceIdEl) {
-            if (connected && this.devices[deviceType].data?.device_info) {
-                deviceIdEl.textContent = this.devices[deviceType].data.device_info.formatted_id || 'Connecté';
-            } else {
-                deviceIdEl.textContent = 'Non connecté';
-            }
-        }
-
-        // Mettre à jour l'UI globale immédiatement
-        this.updateUI();
-
-        // Si on passe en mode single device, forcer l'animation
-        const connectedCount = Object.values(this.devices).filter(d => d.connected).length;
-        if (connectedCount === 1 && connected) {
-            setTimeout(() => {
-                const activeCard = document.querySelector('.polar_device-card.polar_active');
-                if (activeCard) {
-                    activeCard.style.opacity = '1';
-                    activeCard.style.transform = 'scale(1)';
-                }
-            }, 50);
+    if (card) {
+        if (connected) {
+            card.classList.remove('polar_inactive');
+            card.classList.add('polar_active');
+        } else {
+            card.classList.remove('polar_active');
+            card.classList.add('polar_inactive');
         }
     }
+
+    if (statusEl) {
+        const statusDot = statusEl.querySelector('.polar_status-dot');
+        const statusText = statusEl.querySelector('span:last-child');
+
+        if (connected) {
+            statusDot.classList.add('polar_connected');
+            statusText.textContent = 'Connecté';
+        } else {
+            statusDot.classList.remove('polar_connected');
+            statusText.textContent = 'Déconnecté';
+        }
+    }
+
+    // CORRECTION: Meilleure gestion de l'affichage de l'ID
+    if (deviceIdEl) {
+        if (connected) {
+            // Essayer de récupérer l'ID depuis différentes sources
+            let deviceId = null;
+
+            if (this.devices[deviceType].data) {
+                const data = this.devices[deviceType].data;
+
+                // Priorité 1: formatted_device_id au niveau racine
+                if (data.formatted_device_id) {
+                    deviceId = data.formatted_device_id;
+                }
+                // Priorité 2: device_info.formatted_id
+                else if (data.device_info?.formatted_id) {
+                    deviceId = data.device_info.formatted_id;
+                }
+                // Priorité 3: formatter l'adresse brute
+                else if (data.device_info?.device_id) {
+                    deviceId = this.formatDeviceId(data.device_info.device_id);
+                }
+            }
+
+            // Si on a trouvé un ID, l'afficher
+            if (deviceId && deviceId !== "Non connecté") {
+                deviceIdEl.textContent = deviceId;
+            } else {
+                deviceIdEl.textContent = deviceId;
+            }
+        } else {
+            deviceIdEl.textContent = '--';
+        }
+    }
+
+    // Mettre à jour l'UI globale immédiatement
+    this.updateUI();
+
+    // Si on passe en mode single device, forcer l'animation
+    const connectedCount = Object.values(this.devices).filter(d => d.connected).length;
+    if (connectedCount === 1 && connected) {
+        setTimeout(() => {
+            const activeCard = document.querySelector('.polar_device-card.polar_active');
+            if (activeCard) {
+                activeCard.style.opacity = '1';
+                activeCard.style.transform = 'scale(1)';
+            }
+        }, 50);
+    }
+}
 
     /**
      * Met à jour l'UI globale
@@ -1687,19 +1990,32 @@ class PolarModule {
         }
     }
 
-    /**
-     * Formate l'ID d'un appareil
-     */
-    formatDeviceId(address) {
-        if (!address) return 'Unknown';
+ /**
+ * Formate l'ID d'un appareil
+ */
+formatDeviceId(address) {
+    if (!address) return '--';
 
-        if (address.includes(':')) {
-            const parts = address.split(':');
-            return `${parts[parts.length-2]}:${parts[parts.length-1]}`;
-        }
-
-        return address.substring(address.length - 6);
+    // Si c'est déjà formaté (contient déjà XX:XX à la fin)
+    if (address.match(/[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}$/)) {
+        return address.toUpperCase();
     }
+
+    // Format MAC address complet
+    if (address.includes(':')) {
+        const parts = address.split(':');
+        if (parts.length >= 6) {
+            return `${parts[parts.length-2]}:${parts[parts.length-1]}`.toUpperCase();
+        }
+    }
+
+    // Format partiel
+    if (address.length > 6) {
+        return address.substring(address.length - 6).toUpperCase();
+    }
+
+    return address.toUpperCase();
+}
 
     /**
      * Calcule la force du signal
@@ -1748,6 +2064,7 @@ class PolarModule {
 
         const icon = type === 'success' ? 'fa-check-circle' :
                      type === 'error' ? 'fa-exclamation-circle' :
+                     type === 'warning' ? 'fa-exclamation-triangle' :
                      'fa-info-circle';
 
         toast.innerHTML = `
@@ -1802,6 +2119,44 @@ class PolarModule {
      */
     handleError(data) {
         console.error('Erreur Polar:', data);
+
+        // Cacher le chargement si affiché
+        this.hideLoading();
+
+        // Si on est en scan, gérer l'erreur spécifiquement
+        if (this.scanState.isScanning) {
+            this.scanState.isScanning = false;
+
+            // Nettoyer le timeout
+            if (this.scanState.scanTimeout) {
+                clearTimeout(this.scanState.scanTimeout);
+                this.scanState.scanTimeout = null;
+            }
+
+            // S'assurer que le modal reste visible
+            const modal = document.getElementById('polar_connectionModal');
+            if (modal && this.modalState.isOpen) {
+                modal.removeAttribute('style');
+                modal.classList.add('polar_active');
+            }
+
+            // Afficher le message d'erreur dans la modal
+            const devicesList = document.getElementById('polar_devicesList');
+            const noDevices = document.getElementById('polar_noDevices');
+
+            if (devicesList) {
+                devicesList.innerHTML = '';
+            }
+
+            if (noDevices) {
+                const messageEl = noDevices.querySelector('p');
+                if (messageEl) {
+                    messageEl.textContent = data.error || 'Une erreur est survenue. Veuillez réessayer.';
+                }
+                noDevices.style.display = 'block';
+            }
+        }
+
         this.showToast(data.error || 'Une erreur est survenue', 'error');
     }
 
@@ -1811,7 +2166,7 @@ class PolarModule {
             devices: {
                 h10: {
                     connected: this.devices.h10.connected,
-                    name: this.devices.h10.connected ? 'Polar H10' : 'Non connecté',
+                    name: this.devices.h10.connected ? 'Polar H10' : '--',
                     data: this.devices.h10.data ? {
                         heart_rate: this.devices.h10.data.heart_rate,
                         battery: this.devices.h10.data.battery_level,
@@ -1820,7 +2175,7 @@ class PolarModule {
                 },
                 verity: {
                     connected: this.devices.verity.connected,
-                    name: this.devices.verity.connected ? 'Polar Verity Sense' : 'Non connecté',
+                    name: this.devices.verity.connected ? 'Polar Verity Sense' : '--',
                     data: this.devices.verity.data ? {
                         heart_rate: this.devices.verity.data.heart_rate,
                         battery: this.devices.verity.data.battery_level,
@@ -1914,6 +2269,12 @@ class PolarModule {
                 this.dashboardUpdateInterval = null;
             }
 
+            // Nettoyer le timeout de scan
+            if (this.scanState.scanTimeout) {
+                clearTimeout(this.scanState.scanTimeout);
+                this.scanState.scanTimeout = null;
+            }
+
             return;
         }
 
@@ -1933,6 +2294,12 @@ class PolarModule {
         if (this.dashboardUpdateInterval) {
             clearInterval(this.dashboardUpdateInterval);
             this.dashboardUpdateInterval = null;
+        }
+
+        // Nettoyer le timeout de scan
+        if (this.scanState.scanTimeout) {
+            clearTimeout(this.scanState.scanTimeout);
+            this.scanState.scanTimeout = null;
         }
 
         // Réinitialiser l'interface si des appareils sont connectés

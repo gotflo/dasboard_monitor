@@ -1,6 +1,6 @@
 /**
- * Module Capture de Pensée - Version corrigée avec gestion robuste du template et émission WebSocket
- * Tous les éléments DOM utilisent le préfixe thought_ pour éviter les conflits
+ * Module Capture de Pensée - Version avec transcription Whisper
+ * Interface deux colonnes moderne avec gestion des transcriptions
  */
 
 class ThoughtCaptureModule {
@@ -17,10 +17,12 @@ class ThoughtCaptureModule {
         this.audioPermissionsChecked = false;
         this.isInitialized = false;
         this.wsClient = null;
+        this.selectedRecording = null;
+        this.transcriptionPollingInterval = null;
 
-        // Stocker le template HTML comme string pour éviter les problèmes de DOM
+        // Template HTML pour les items de la liste
         this.recordingItemTemplateHTML = `
-            <div class="thought_recording-item" data-id="">
+            <div class="thought_recording-item" data-filename="">
                 <div class="thought_recording-info">
                     <div class="thought_recording-icon">
                         <i class="fas fa-file-audio"></i>
@@ -30,7 +32,7 @@ class ThoughtCaptureModule {
                         <div class="thought_recording-meta">
                             <span class="thought_recording-date"></span>
                             <span class="thought_recording-duration"></span>
-                            <span class="thought_recording-size"></span>
+                            <span class="thought_recording-transcription-status"></span>
                         </div>
                     </div>
                 </div>
@@ -38,6 +40,9 @@ class ThoughtCaptureModule {
                 <div class="thought_recording-actions">
                     <button class="thought_btn-action thought_btn-play" title="Écouter">
                         <i class="fas fa-play"></i>
+                    </button>
+                    <button class="thought_btn-action thought_btn-transcribe" title="Voir transcription">
+                        <i class="fas fa-file-text"></i>
                     </button>
                     <button class="thought_btn-action thought_btn-download" title="Télécharger">
                         <i class="fas fa-download"></i>
@@ -58,7 +63,7 @@ class ThoughtCaptureModule {
     }
 
     async init() {
-        console.log('Initialisation du module Capture de Pensée (Simple)');
+        console.log('Initialisation du module Capture de Pensée avec Transcription');
 
         try {
             // Récupérer le client WebSocket
@@ -66,23 +71,19 @@ class ThoughtCaptureModule {
 
             // Ne pas réinitialiser le timer si un enregistrement est en cours
             if (!this.thought_isRecording) {
-                // Nettoyer tout timer existant
                 if (this.thought_timerInterval) {
                     clearInterval(this.thought_timerInterval);
                     this.thought_timerInterval = null;
                 }
 
-                // Réinitialiser l'affichage du timer seulement si pas d'enregistrement
                 const timerElement = document.getElementById('thought_recordingTimer');
                 if (timerElement) {
                     timerElement.textContent = '00:00';
                 }
             } else {
                 console.log('Enregistrement en cours, conservation du timer');
-                // Redémarrer le timer avec le temps sauvegardé
                 this.startTimer();
 
-                // Restaurer la visualisation si nécessaire
                 if (this.thought_mediaRecorder && this.thought_mediaRecorder.stream) {
                     this.startAudioVisualization(this.thought_mediaRecorder.stream);
                 }
@@ -94,7 +95,7 @@ class ThoughtCaptureModule {
             // Configuration des boutons
             this.setupEventListeners();
 
-            // Vérifier les permissions audio seulement si pas déjà fait
+            // Vérifier les permissions audio
             if (!this.audioPermissionsChecked) {
                 await this.checkAudioPermissions();
                 this.audioPermissionsChecked = true;
@@ -108,12 +109,29 @@ class ThoughtCaptureModule {
                 this.updateRecordingUI(true);
             }
 
+            // Initialiser l'affichage de la transcription
+            this.initTranscriptionDisplay();
+
             // Émettre les statistiques initiales
             this.emitStatsUpdate();
 
-            console.log('Module initialisé');
+            console.log('Module initialisé avec transcription');
         } catch (error) {
             console.error('Erreur:', error);
+        }
+    }
+
+    initTranscriptionDisplay() {
+        // Afficher un message par défaut dans la zone de transcription
+        const transcriptionContent = document.getElementById('thought_transcriptionContent');
+        if (transcriptionContent && !this.selectedRecording) {
+            transcriptionContent.innerHTML = `
+                <div class="thought_empty-transcription">
+                    <i class="fas fa-file-text"></i>
+                    <p>Aucune transcription sélectionnée</p>
+                    <span>Sélectionnez un enregistrement pour voir sa transcription</span>
+                </div>
+            `;
         }
     }
 
@@ -126,8 +144,6 @@ class ThoughtCaptureModule {
             console.log(`${this.thought_recordings.length} fichiers trouvés`);
 
             this.renderRecordings();
-
-            // Calculer et émettre les statistiques
             this.calculateAndEmitStats();
         } catch (error) {
             console.error('Erreur chargement:', error);
@@ -137,7 +153,6 @@ class ThoughtCaptureModule {
     }
 
     setupEventListeners() {
-        // Éviter de dupliquer les event listeners
         if (this.isInitialized) {
             console.log('Event listeners déjà configurés');
             return;
@@ -165,7 +180,13 @@ class ThoughtCaptureModule {
             btnPause.addEventListener('click', this.togglePauseHandler);
         }
 
-        // Écouter les événements WebSocket pour les contrôles distants
+        // Bouton pour copier la transcription
+        const btnCopy = document.getElementById('thought_btnCopyTranscription');
+        if (btnCopy) {
+            btnCopy.addEventListener('click', () => this.copyTranscriptionToClipboard());
+        }
+
+        // Écouter les événements WebSocket
         if (this.wsClient && this.wsClient.socket) {
             this.wsClient.socket.on('thought_capture_start_recording', () => {
                 if (!this.thought_isRecording) {
@@ -179,16 +200,8 @@ class ThoughtCaptureModule {
                 }
             });
 
-            this.wsClient.socket.on('thought_capture_pause_recording', () => {
-                if (this.thought_isRecording && !this.thought_isPaused) {
-                    this.togglePause();
-                }
-            });
-
-            this.wsClient.socket.on('thought_capture_resume_recording', () => {
-                if (this.thought_isRecording && this.thought_isPaused) {
-                    this.togglePause();
-                }
+            this.wsClient.socket.on('thought_capture_transcription_ready', (data) => {
+                this.onTranscriptionReady(data);
             });
         }
 
@@ -212,7 +225,7 @@ class ThoughtCaptureModule {
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
-        ctx.strokeStyle = '#feca57';
+        ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 2;
     }
 
@@ -241,7 +254,6 @@ class ThoughtCaptureModule {
             };
 
             this.thought_mediaRecorder.onstop = async () => {
-                // S'assurer que le timer est arrêté avant la sauvegarde
                 this.stopTimer();
                 await this.saveRecording();
             };
@@ -254,7 +266,6 @@ class ThoughtCaptureModule {
             this.startTimer();
             this.startAudioVisualization(stream);
 
-            // Émettre l'événement de démarrage
             this.emitRecordingStarted();
 
             console.log('Enregistrement démarré');
@@ -271,22 +282,16 @@ class ThoughtCaptureModule {
             this.thought_mediaRecorder.stop();
             this.thought_isRecording = false;
             this.thought_isPaused = false;
-            this.thought_recordingStartTime = null; // Réinitialiser le temps de départ
+            this.thought_recordingStartTime = null;
 
             if (this.thought_mediaRecorder.stream) {
                 this.thought_mediaRecorder.stream.getTracks().forEach(track => track.stop());
             }
 
-            // Arrêter le timer immédiatement
             this.stopTimer();
-
-            // Mettre à jour l'UI
             this.updateRecordingUI(false);
-
-            // Arrêter la visualisation
             this.stopAudioVisualization();
 
-            // Émettre l'événement d'arrêt (la taille sera émise après la sauvegarde)
             this.emitRecordingStopped(duration);
 
             console.log('Enregistrement arrêté');
@@ -306,7 +311,6 @@ class ThoughtCaptureModule {
             status.textContent = 'En pause';
             status.classList.add('thought_paused');
 
-            // Émettre l'événement de pause
             this.emitRecordingPaused();
         } else {
             this.thought_mediaRecorder.resume();
@@ -315,7 +319,6 @@ class ThoughtCaptureModule {
             status.textContent = 'Enregistrement...';
             status.classList.remove('thought_paused');
 
-            // Émettre l'événement de reprise
             this.emitRecordingResumed();
         }
     }
@@ -353,7 +356,6 @@ class ThoughtCaptureModule {
             }
             visualizerOverlay?.classList.remove('thought_recording');
 
-            // S'assurer que le timer est réinitialisé
             if (timerElement) {
                 timerElement.textContent = '00:00';
             }
@@ -361,7 +363,6 @@ class ThoughtCaptureModule {
     }
 
     startTimer() {
-        // S'assurer qu'aucun timer n'est déjà en cours
         if (this.thought_timerInterval) {
             clearInterval(this.thought_timerInterval);
             this.thought_timerInterval = null;
@@ -370,7 +371,6 @@ class ThoughtCaptureModule {
         const timerElement = document.getElementById('thought_recordingTimer');
         if (!timerElement) return;
 
-        // Utiliser le temps de départ sauvegardé
         const startTime = this.thought_recordingStartTime || Date.now();
 
         this.thought_timerInterval = setInterval(() => {
@@ -382,13 +382,11 @@ class ThoughtCaptureModule {
             if (currentTimerElement) {
                 currentTimerElement.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             } else {
-                // Si l'élément n'existe plus, arrêter le timer
                 clearInterval(this.thought_timerInterval);
                 this.thought_timerInterval = null;
             }
         }, 1000);
 
-        // Afficher immédiatement le temps écoulé si on restaure
         if (this.thought_recordingStartTime) {
             const elapsed = Math.floor((Date.now() - this.thought_recordingStartTime) / 1000);
             const mins = Math.floor(elapsed / 60);
@@ -403,7 +401,6 @@ class ThoughtCaptureModule {
             this.thought_timerInterval = null;
         }
 
-        // S'assurer que le timer est bien réinitialisé même si l'élément n'est pas trouvé immédiatement
         const timerElement = document.getElementById('thought_recordingTimer');
         if (timerElement) {
             timerElement.textContent = '00:00';
@@ -433,7 +430,7 @@ class ThoughtCaptureModule {
 
                 this.thought_analyser.getByteFrequencyData(dataArray);
 
-                ctx.fillStyle = '#f8fafc';
+                ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 const barWidth = (canvas.width / bufferLength) * 2.5;
@@ -444,8 +441,8 @@ class ThoughtCaptureModule {
                     barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
 
                     const gradient = ctx.createLinearGradient(0, canvas.height, 0, canvas.height - barHeight);
-                    gradient.addColorStop(0, '#feca57');
-                    gradient.addColorStop(1, '#f59e0b');
+                    gradient.addColorStop(0, '#3b82f6');
+                    gradient.addColorStop(1, '#60a5fa');
 
                     ctx.fillStyle = gradient;
                     ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
@@ -453,7 +450,6 @@ class ThoughtCaptureModule {
                     x += barWidth + 1;
                 }
 
-                // Mettre à jour le niveau audio
                 const average = dataArray.reduce((a, b) => a + b) / bufferLength;
                 const level = (average / 255) * 100;
                 const audioLevel = document.getElementById('thought_audioLevel');
@@ -461,7 +457,6 @@ class ThoughtCaptureModule {
                     audioLevel.style.width = `${level}%`;
                 }
 
-                // Émettre le niveau audio via WebSocket
                 this.emitAudioLevel(level, dataArray);
             };
 
@@ -480,7 +475,7 @@ class ThoughtCaptureModule {
         const canvas = document.getElementById('thought_audioCanvas');
         if (canvas) {
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#f8fafc';
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
@@ -494,13 +489,12 @@ class ThoughtCaptureModule {
         const blob = new Blob(this.thought_audioChunks, { type: 'audio/webm' });
         const duration = Math.floor((Date.now() - this.thought_recordingStartTime) / 1000);
 
-        // Créer un FormData pour envoyer le fichier
         const formData = new FormData();
         formData.append('audio', blob, 'recording.webm');
         formData.append('duration', duration);
 
         try {
-            this.showNotification('Sauvegarde en cours...', 'info');
+            this.showNotification('Sauvegarde et transcription en cours...', 'info');
 
             const response = await fetch('/api/thought-capture/save-audio', {
                 method: 'POST',
@@ -514,47 +508,280 @@ class ThoughtCaptureModule {
             const result = await response.json();
             console.log('Fichier sauvegardé:', result.filename);
 
-            // Recharger la liste et recalculer les stats
+            // Recharger la liste
             await this.loadRecordings();
 
-            this.showNotification('Enregistrement sauvegardé !', 'success');
+            // Si transcription en attente, démarrer le polling
+            if (result.transcription_pending) {
+                this.startTranscriptionPolling(result.filename);
+            }
+
+            this.showNotification('Enregistrement sauvegardé ! Transcription en cours...', 'success');
         } catch (error) {
             console.error('Erreur:', error);
             this.showNotification('Erreur lors de la sauvegarde', 'error');
         }
     }
 
+    startTranscriptionPolling(filename) {
+        // Vérifier périodiquement si la transcription est prête
+        let attempts = 0;
+        const maxAttempts = 30; // Maximum 30 secondes
+
+        const checkTranscription = async () => {
+            attempts++;
+
+            try {
+                const response = await fetch(`/api/thought-capture/get-transcription/${filename}`);
+                const data = await response.json();
+
+                if (data.success && data.transcription) {
+                    // Transcription prête
+                    this.onTranscriptionReady({ filename, transcription: data.transcription });
+
+                    // Recharger la liste pour mettre à jour le statut
+                    await this.loadRecordings();
+
+                    clearInterval(this.transcriptionPollingInterval);
+                    this.transcriptionPollingInterval = null;
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(this.transcriptionPollingInterval);
+                    this.transcriptionPollingInterval = null;
+                }
+            } catch (error) {
+                console.error('Erreur polling transcription:', error);
+                clearInterval(this.transcriptionPollingInterval);
+                this.transcriptionPollingInterval = null;
+            }
+        };
+
+        // Vérifier toutes les secondes
+        this.transcriptionPollingInterval = setInterval(checkTranscription, 1000);
+    }
+
+    onTranscriptionReady(data) {
+        console.log('Transcription prête:', data.filename);
+
+        // Mettre à jour l'élément dans la liste
+        const item = document.querySelector(`[data-filename="${data.filename}"]`);
+        if (item) {
+            const statusElement = item.querySelector('.thought_recording-transcription-status');
+            if (statusElement) {
+                statusElement.innerHTML = '<i class="fas fa-check-circle"></i> Transcrit';
+                statusElement.classList.add('thought_transcribed');
+            }
+        }
+
+        // Si c'est l'enregistrement sélectionné, afficher la transcription
+        if (this.selectedRecording === data.filename) {
+            this.displayTranscription(data.transcription);
+        }
+
+        this.showNotification('Transcription terminée !', 'success');
+    }
+
+    async selectRecording(filename) {
+        this.selectedRecording = filename;
+
+        // Mettre à jour l'UI pour montrer la sélection
+        document.querySelectorAll('.thought_recording-item').forEach(item => {
+            item.classList.remove('thought_selected');
+        });
+
+        const selectedItem = document.querySelector(`[data-filename="${filename}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('thought_selected');
+        }
+
+        // Charger et afficher la transcription
+        await this.loadTranscription(filename);
+    }
+
+    async loadTranscription(filename) {
+        const transcriptionContent = document.getElementById('thought_transcriptionContent');
+        const transcriptionHeader = document.getElementById('thought_selectedRecordingName');
+
+        // Afficher un loader
+        if (transcriptionContent) {
+            transcriptionContent.innerHTML = `
+                <div class="thought_loading-transcription">
+                    <div class="thought_spinner"></div>
+                    <p>Chargement de la transcription...</p>
+                </div>
+            `;
+        }
+
+        // Mettre à jour le header
+        if (transcriptionHeader) {
+            const recording = this.thought_recordings.find(r => r.filename === filename);
+            if (recording) {
+                const date = this.formatTimestamp(recording.timestamp);
+                transcriptionHeader.textContent = `Pensée du ${date}`;
+            }
+        }
+
+        try {
+            // Essayer de récupérer la transcription existante
+            let response = await fetch(`/api/thought-capture/get-transcription/${filename}`);
+            let data = await response.json();
+
+            if (!data.success || !data.transcription) {
+                // Si pas de transcription, en demander une
+                response = await fetch(`/api/thought-capture/transcribe/${filename}`, {
+                    method: 'POST'
+                });
+                data = await response.json();
+            }
+
+            if (data.success && data.transcription) {
+                this.displayTranscription(data.transcription);
+
+                // Mettre à jour le statut dans la liste
+                const item = document.querySelector(`[data-filename="${filename}"]`);
+                if (item) {
+                    const statusElement = item.querySelector('.thought_recording-transcription-status');
+                    if (statusElement && !statusElement.classList.contains('thought_transcribed')) {
+                        statusElement.innerHTML = '<i class="fas fa-check-circle"></i> Transcrit';
+                        statusElement.classList.add('thought_transcribed');
+                    }
+                }
+            } else {
+                this.displayTranscriptionError('Transcription non disponible');
+            }
+        } catch (error) {
+            console.error('Erreur chargement transcription:', error);
+            this.displayTranscriptionError('Erreur lors du chargement de la transcription');
+        }
+    }
+
+    displayTranscription(transcription) {
+        const transcriptionContent = document.getElementById('thought_transcriptionContent');
+        if (!transcriptionContent) return;
+
+        // Afficher le texte principal
+        let html = `
+            <div class="thought_transcription-text">
+                ${this.formatTranscriptionText(transcription.text)}
+            </div>
+        `;
+
+        // Si on a des segments avec timestamps, les afficher
+        if (transcription.segments && transcription.segments.length > 0) {
+            html += `
+                <div class="thought_transcription-segments">
+                    <h4>Segments détaillés</h4>
+                    <div class="thought_segments-list">
+            `;
+
+            transcription.segments.forEach(segment => {
+                const startTime = this.formatTime(segment.start);
+                const endTime = this.formatTime(segment.end);
+                html += `
+                    <div class="thought_segment">
+                        <span class="thought_segment-time">[${startTime} - ${endTime}]</span>
+                        <span class="thought_segment-text">${segment.text}</span>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+
+        transcriptionContent.innerHTML = html;
+    }
+
+    displayTranscriptionError(message) {
+        const transcriptionContent = document.getElementById('thought_transcriptionContent');
+        if (transcriptionContent) {
+            transcriptionContent.innerHTML = `
+                <div class="thought_transcription-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+    }
+
+    formatTranscriptionText(text) {
+        // Formater le texte pour une meilleure lisibilité
+        return text
+            .replace(/\n/g, '<br>')
+            .replace(/([.!?])\s+/g, '$1<br><br>')
+            .trim();
+    }
+
+    formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    formatTimestamp(timestamp) {
+        const year = timestamp.substring(0, 4);
+        const month = timestamp.substring(4, 6);
+        const day = timestamp.substring(6, 8);
+        const hour = timestamp.substring(9, 11);
+        const min = timestamp.substring(11, 13);
+        return `${day}/${month}/${year} à ${hour}:${min}`;
+    }
+
+    async copyTranscriptionToClipboard() {
+        const transcriptionText = document.querySelector('.thought_transcription-text');
+        if (transcriptionText) {
+            const text = transcriptionText.innerText;
+            try {
+                await navigator.clipboard.writeText(text);
+                this.showNotification('Transcription copiée !', 'success');
+            } catch (error) {
+                console.error('Erreur copie:', error);
+                this.showNotification('Erreur lors de la copie', 'error');
+            }
+        }
+    }
+
     createRecordingElement(recording) {
-        // Créer un élément DOM à partir du template HTML
         const wrapper = document.createElement('div');
         wrapper.innerHTML = this.recordingItemTemplateHTML;
         const element = wrapper.firstElementChild;
 
-        // Formater la date depuis le timestamp
-        const year = recording.timestamp.substring(0, 4);
-        const month = recording.timestamp.substring(4, 6);
-        const day = recording.timestamp.substring(6, 8);
-        const hour = recording.timestamp.substring(9, 11);
-        const min = recording.timestamp.substring(11, 13);
-        const sec = recording.timestamp.substring(13, 15);
-        const dateStr = `${day}/${month}/${year} ${hour}:${min}:${sec}`;
+        const dateStr = this.formatTimestamp(recording.timestamp);
 
         element.dataset.filename = recording.filename;
         element.querySelector('.thought_recording-name').textContent = `Pensée ${dateStr}`;
         element.querySelector('.thought_recording-date').textContent = dateStr;
-        element.querySelector('.thought_recording-duration').textContent = '-';
-        element.querySelector('.thought_recording-size').textContent = this.formatSize(recording.size);
+        element.querySelector('.thought_recording-duration').textContent = `${recording.duration || 0}s`;
+
+        // Statut de transcription
+        const transcriptionStatus = element.querySelector('.thought_recording-transcription-status');
+        if (recording.has_transcription) {
+            transcriptionStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transcrit';
+            transcriptionStatus.classList.add('thought_transcribed');
+        } else {
+            transcriptionStatus.innerHTML = '<i class="fas fa-clock"></i> En attente';
+        }
 
         const playBtn = element.querySelector('.thought_btn-play');
+        const transcribeBtn = element.querySelector('.thought_btn-transcribe');
         const downloadBtn = element.querySelector('.thought_btn-download');
         const deleteBtn = element.querySelector('.thought_btn-delete');
         const audioPlayer = element.querySelector('.thought_audio-player');
         const playerContainer = element.querySelector('.thought_audio-player-container');
 
-        // Utiliser directement l'URL du fichier
         const audioUrl = recording.url;
 
-        playBtn.addEventListener('click', () => {
+        // Clic sur l'élément pour sélectionner
+        element.addEventListener('click', (e) => {
+            if (!e.target.closest('.thought_recording-actions') &&
+                !e.target.closest('.thought_audio-player-container')) {
+                this.selectRecording(recording.filename);
+            }
+        });
+
+        playBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             if (playerContainer.style.display === 'none') {
                 playerContainer.style.display = 'block';
                 audioPlayer.src = audioUrl;
@@ -575,7 +802,13 @@ class ThoughtCaptureModule {
             playBtn.innerHTML = '<i class="fas fa-play"></i>';
         });
 
-        downloadBtn.addEventListener('click', () => {
+        transcribeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.selectRecording(recording.filename);
+        });
+
+        downloadBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             const a = document.createElement('a');
             a.href = audioUrl;
             a.download = recording.filename;
@@ -583,7 +816,8 @@ class ThoughtCaptureModule {
             this.showNotification('Téléchargement démarré', 'success');
         });
 
-        deleteBtn.addEventListener('click', () => {
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             this.deleteRecording(recording.filename);
         });
 
@@ -596,7 +830,7 @@ class ThoughtCaptureModule {
 
         if (!listContainer || !countElement) return;
 
-        countElement.textContent = `${this.thought_recordings.length} fichiers`;
+        countElement.textContent = `${this.thought_recordings.length} enregistrements`;
 
         if (this.thought_recordings.length === 0) {
             listContainer.innerHTML = `
@@ -615,6 +849,14 @@ class ThoughtCaptureModule {
             const element = this.createRecordingElement(recording);
             listContainer.appendChild(element);
         });
+
+        // Si un enregistrement était sélectionné, le resélectionner
+        if (this.selectedRecording) {
+            const selectedItem = document.querySelector(`[data-filename="${this.selectedRecording}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('thought_selected');
+            }
+        }
     }
 
     formatSize(bytes) {
@@ -624,7 +866,7 @@ class ThoughtCaptureModule {
     }
 
     async deleteRecording(filename) {
-        if (confirm('Êtes-vous sûr de vouloir supprimer cet enregistrement ?')) {
+        if (confirm('Êtes-vous sûr de vouloir supprimer cet enregistrement et sa transcription ?')) {
             try {
                 const response = await fetch(`/api/thought-capture/delete-audio/${filename}`, {
                     method: 'DELETE'
@@ -634,7 +876,12 @@ class ThoughtCaptureModule {
                     throw new Error('Erreur serveur');
                 }
 
-                // Recharger la liste et recalculer les stats
+                // Si c'était l'enregistrement sélectionné, réinitialiser
+                if (this.selectedRecording === filename) {
+                    this.selectedRecording = null;
+                    this.initTranscriptionDisplay();
+                }
+
                 await this.loadRecordings();
 
                 this.showNotification('Enregistrement supprimé', 'info');
@@ -655,11 +902,12 @@ class ThoughtCaptureModule {
             padding: 1rem 1.5rem;
             background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
             color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             z-index: 10000;
             animation: thought_slideIn 0.3s ease;
             max-width: 350px;
+            font-weight: 500;
         `;
         notification.textContent = message;
 
@@ -687,8 +935,7 @@ class ThoughtCaptureModule {
 
     emitRecordingStopped(duration) {
         if (this.wsClient && this.wsClient.socket) {
-            // Calculer la taille approximative (sera mise à jour après la sauvegarde)
-            const estimatedSize = duration * 16000; // ~16KB par seconde pour l'audio webm
+            const estimatedSize = duration * 16000;
 
             this.wsClient.socket.emit('thought_capture_recording_stopped', {
                 duration: duration,
@@ -716,13 +963,11 @@ class ThoughtCaptureModule {
 
     emitAudioLevel(level, waveformData) {
         if (this.wsClient && this.wsClient.socket) {
-            // Throttle les émissions (maximum 10 par seconde)
             if (!this.lastAudioLevelEmit || Date.now() - this.lastAudioLevelEmit > 100) {
                 this.lastAudioLevelEmit = Date.now();
 
-                // Convertir le Uint8Array en array normal et échantillonner
                 const waveform = [];
-                const step = Math.floor(waveformData.length / 64); // Réduire à 64 échantillons
+                const step = Math.floor(waveformData.length / 64);
                 for (let i = 0; i < waveformData.length; i += step) {
                     waveform.push(waveformData[i]);
                 }
@@ -747,16 +992,21 @@ class ThoughtCaptureModule {
     calculateStats() {
         let totalDuration = 0;
         let totalSize = 0;
+        let totalTranscribed = 0;
 
         this.thought_recordings.forEach(recording => {
             totalDuration += recording.duration || 0;
             totalSize += recording.size || 0;
+            if (recording.has_transcription) {
+                totalTranscribed++;
+            }
         });
 
         return {
             total_recordings: this.thought_recordings.length,
             total_duration: totalDuration,
             total_size: totalSize,
+            total_transcribed: totalTranscribed,
             timestamp: new Date().toISOString()
         };
     }
@@ -765,7 +1015,6 @@ class ThoughtCaptureModule {
         const stats = this.calculateStats();
         this.emitStatsUpdate();
 
-        // Mettre à jour l'interface locale aussi si on est sur la page thought capture
         const totalRecordingsEl = document.querySelector('.thought_stats-value[data-stat="total"]');
         const totalDurationEl = document.querySelector('.thought_stats-value[data-stat="duration"]');
         const totalSizeEl = document.querySelector('.thought_stats-value[data-stat="size"]');
@@ -776,7 +1025,6 @@ class ThoughtCaptureModule {
     }
 
     calculateDominantFrequency(dataArray) {
-        // Calcul simple de la fréquence dominante
         let maxValue = 0;
         let maxIndex = 0;
 
@@ -787,7 +1035,6 @@ class ThoughtCaptureModule {
             }
         }
 
-        // Convertir l'index en fréquence approximative
         const nyquist = this.thought_audioContext ? this.thought_audioContext.sampleRate / 2 : 22050;
         const frequency = (maxIndex / dataArray.length) * nyquist;
 
@@ -811,24 +1058,25 @@ class ThoughtCaptureModule {
     cleanup() {
         console.log('Nettoyage du module...');
 
-        // Arrêter l'enregistrement si en cours
         if (this.thought_isRecording) {
             this.stopRecording();
         }
 
-        // S'assurer que le timer est bien arrêté
         if (this.thought_timerInterval) {
             clearInterval(this.thought_timerInterval);
             this.thought_timerInterval = null;
         }
 
-        // Fermer le contexte audio
+        if (this.transcriptionPollingInterval) {
+            clearInterval(this.transcriptionPollingInterval);
+            this.transcriptionPollingInterval = null;
+        }
+
         if (this.thought_audioContext) {
             this.thought_audioContext.close();
             this.thought_audioContext = null;
         }
 
-        // Supprimer les notifications
         document.querySelectorAll('.thought_capture-notification').forEach(notif => {
             notif.remove();
         });

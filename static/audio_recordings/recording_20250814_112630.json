@@ -1,0 +1,82 @@
+{
+  "filename": "recording_20250814_112630.webm",
+  "timestamp": "20250814_112630",
+  "date": "2025-08-14T11:26:30.999821",
+  "duration": 1755185190,
+  "size": 370139,
+  "transcription": {
+    "text": " Bonjour, là je fais le test pour voir la précision. Nous avons changé le modèle de large de base plutôt en médian pour pouvoir faire le test et voir la précision.",
+    "segments": [
+      {
+        "id": 0,
+        "seek": 0,
+        "start": 0.0,
+        "end": 10.28,
+        "text": " Bonjour, là je fais le test pour voir la précision. Nous avons changé le modèle",
+        "tokens": [
+          50364,
+          25431,
+          11,
+          3684,
+          1506,
+          12153,
+          476,
+          1500,
+          2016,
+          10695,
+          635,
+          23107,
+          1991,
+          13,
+          15343,
+          18990,
+          1534,
+          526,
+          476,
+          45631,
+          50878
+        ],
+        "temperature": 0.0,
+        "avg_logprob": -0.3887827673623728,
+        "compression_ratio": 1.3412698412698412,
+        "no_speech_prob": 0.049830205738544464
+      },
+      {
+        "id": 1,
+        "seek": 0,
+        "start": 10.28,
+        "end": 22.88,
+        "text": " de large de base plutôt en médian pour pouvoir faire le test et voir la précision.",
+        "tokens": [
+          50878,
+          368,
+          2416,
+          368,
+          3096,
+          20856,
+          465,
+          16978,
+          952,
+          2016,
+          14874,
+          4865,
+          476,
+          1500,
+          1030,
+          10695,
+          635,
+          23107,
+          1991,
+          13,
+          51508
+        ],
+        "temperature": 0.0,
+        "avg_logprob": -0.3887827673623728,
+        "compression_ratio": 1.3412698412698412,
+        "no_speech_prob": 0.049830205738544464
+      }
+    ],
+    "language": "fr",
+    "timestamp": "2025-08-14T11:26:33.967043"
+  }
+}

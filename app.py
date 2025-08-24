@@ -58,6 +58,7 @@ def init_modules():
     module_registry = ModuleRegistry()
     
     # Import et initialisation des modules
+
     from modules.thought_capture.thought_capture import (
         init_module as init_thought_capture,
         register_websocket_events as register_thought_capture_events
