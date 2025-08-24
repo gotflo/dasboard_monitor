@@ -1,0 +1,61 @@
+{
+  "filename": "recording_20250815_121121.webm",
+  "timestamp": "20250815_121121",
+  "date": "2025-08-15T12:11:21.044880",
+  "duration": 1755274281,
+  "size": 339227,
+  "transcription": {
+    "text": "bonjour après cette modification du modèle de trône je suis en train de faire le test pour voir si la fonction continue pas à fonctionner correctement",
+    "raw_text": " bonjour après cette modification du modèle de trône je suis en train de faire le test pour voir si la fonction continue pas à fonctionner correctement",
+    "segments": [
+      {
+        "id": 0,
+        "seek": 0,
+        "start": 0.0,
+        "end": 21.06,
+        "text": " bonjour après cette modification du modèle de trône je suis en train de faire le test pour voir si la fonction continue pas à fonctionner correctement",
+        "tokens": [
+          4428,
+          8696,
+          13274,
+          5550,
+          26747,
+          1581,
+          45631,
+          368,
+          504,
+          2851,
+          716,
+          1506,
+          7624,
+          465,
+          3847,
+          368,
+          4865,
+          476,
+          1500,
+          2016,
+          10695,
+          1511,
+          635,
+          20172,
+          2354,
+          1736,
+          1531,
+          20172,
+          1193,
+          3006,
+          1712
+        ],
+        "temperature": 0,
+        "avg_logprob": -0.3693693280220032,
+        "compression_ratio": 1.3391304347826087,
+        "no_speech_prob": 0.03198207914829254
+      }
+    ],
+    "language": "fr",
+    "timestamp": "2025-08-15T12:12:20.337813",
+    "model_used": "base",
+    "device": "cuda"
+  }
+}

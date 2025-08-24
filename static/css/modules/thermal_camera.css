@@ -1,0 +1,578 @@
+/* Module Caméra Thermique - Styles CSS */
+
+/* Variables */
+:root {
+    --thermal-primary: #6366f1;
+    --thermal-secondary: #ec4899;
+    --thermal-success: #10b981;
+    --thermal-danger: #ef4444;
+    --thermal-warning: #f59e0b;
+    --thermal-bg: #f9fafb;
+    --thermal-card-bg: #ffffff;
+    --thermal-border: #e5e7eb;
+    --thermal-text: #111827;
+    --thermal-text-muted: #6b7280;
+    --thermal-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --thermal-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --thermal-radius: 12px;
+    --thermal-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Container principal */
+.thermal-container {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    grid-template-rows: auto 1fr;
+    gap: 24px;
+    padding: 24px;
+    background: var(--thermal-bg);
+    min-height: 100vh;
+}
+
+/* Section gauche */
+.thermal-left-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Section droite */
+.thermal-right-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Section enregistrements (pleine largeur) */
+.thermal-recordings-section {
+    grid-column: 1 / -1;
+}
+
+/* Cards communes */
+.thermal-card {
+    background: var(--thermal-card-bg);
+    border-radius: var(--thermal-radius);
+    box-shadow: var(--thermal-shadow);
+    overflow: hidden;
+    transition: var(--thermal-transition);
+}
+
+.thermal-card:hover {
+    box-shadow: var(--thermal-shadow-lg);
+}
+
+.thermal-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--thermal-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.thermal-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--thermal-text);
+    margin: 0;
+}
+
+/* Animation de vague pour le titre du graphique */
+.graph-card .thermal-card-title {
+    background: linear-gradient(90deg, #6366f1, #ec4899, #6366f1);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: wave-text 3s ease-in-out infinite;
+}
+
+@keyframes wave-text {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* Statut */
+.thermal-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--thermal-danger);
+    transition: var(--thermal-transition);
+}
+
+.status-indicator.active {
+    background: var(--thermal-success);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+.status-text {
+    font-size: 0.875rem;
+    color: var(--thermal-text-muted);
+}
+
+/* Container vidéo */
+.thermal-video-container {
+    position: relative;
+    aspect-ratio: 16/9;
+    background: #000;
+    overflow: hidden;
+}
+
+.thermal-canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Overlay */
+.thermal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+}
+
+.thermal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.overlay-content {
+    text-align: center;
+    color: white;
+}
+
+.overlay-content p {
+    margin: 16px 0 0;
+    font-size: 1.125rem;
+}
+
+.overlay-subtitle {
+    font-size: 0.875rem !important;
+    opacity: 0.8;
+}
+
+.pulse-animation {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    animation: pulse-overlay 2s infinite;
+}
+
+@keyframes pulse-overlay {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Boutons */
+.thermal-control-btn {
+    width: 100%;
+    padding: 16px 24px;
+    background: var(--thermal-primary);
+    color: white;
+    border: none;
+    border-radius: var(--thermal-radius);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--thermal-transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.thermal-control-btn:hover {
+    background: #5558e3;
+    transform: translateY(-1px);
+    box-shadow: var(--thermal-shadow-lg);
+}
+
+.thermal-control-btn:active {
+    transform: translateY(0);
+}
+
+.thermal-control-btn.active {
+    background: var(--thermal-danger);
+}
+
+.thermal-control-btn.active:hover {
+    background: #dc2626;
+}
+
+.btn-icon {
+    font-size: 1.25rem;
+}
+
+.thermal-btn {
+    padding: 12px 20px;
+    background: var(--thermal-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--thermal-transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.thermal-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--thermal-shadow);
+}
+
+.thermal-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.thermal-btn.secondary {
+    background: var(--thermal-secondary);
+}
+
+.thermal-btn.small {
+    padding: 8px 16px;
+    font-size: 0.8125rem;
+}
+
+/* Graphique */
+.graph-card {
+    flex: 1;
+}
+
+/* Statistiques de température améliorées */
+.temperature-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: -8px;
+}
+
+.temperature-stats span {
+    font-size: 0.875rem;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 20px;
+    color: var(--thermal-text);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.temperature-stats span:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Indicateurs visuels de température */
+.temp-avg::before {
+    content: '📊 ';
+    font-size: 0.9em;
+}
+
+.temp-max::before {
+    content: '🔥 ';
+    font-size: 0.9em;
+}
+
+.temp-min::before {
+    content: '❄️ ';
+    font-size: 0.9em;
+}
+
+/* Container du graphique amélioré */
+.chart-container {
+    padding: 24px;
+    background: linear-gradient(to bottom, rgba(99, 102, 241, 0.03), rgba(236, 72, 153, 0.03));
+    border-radius: 8px;
+    height: 300px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Effet de lueur derrière le graphique */
+.chart-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: pulse-glow 4s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        opacity: 0.5;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+}
+
+/* Canvas du graphique */
+#thermal-chart {
+    position: relative;
+    z-index: 1;
+}
+
+/* Contrôles d'enregistrement */
+.recording-controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.recording-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--thermal-danger);
+    display: inline-block;
+}
+
+.recording-indicator.active {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+.recording-info {
+    display: flex;
+    gap: 16px;
+    padding: 12px 20px;
+    background: var(--thermal-bg);
+    border-radius: 8px;
+}
+
+.recording-time {
+    font-weight: 600;
+    color: var(--thermal-danger);
+}
+
+/* Liste des enregistrements */
+.recordings-card {
+    min-height: 200px;
+}
+
+.recordings-list {
+    padding: 24px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.no-recordings {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.no-recordings p {
+    margin: 0 0 8px;
+    color: var(--thermal-text);
+}
+
+.text-muted {
+    color: var(--thermal-text-muted) !important;
+    font-size: 0.875rem;
+}
+
+.recording-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--thermal-bg);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: var(--thermal-transition);
+}
+
+.recording-item:hover {
+    background: #f3f4f6;
+    transform: translateX(4px);
+}
+
+.recording-info-item {
+    flex: 1;
+}
+
+.recording-name {
+    font-weight: 500;
+    color: var(--thermal-text);
+    margin-bottom: 4px;
+}
+
+.recording-meta {
+    font-size: 0.8125rem;
+    color: var(--thermal-text-muted);
+}
+
+.recording-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.refresh-icon {
+    display: inline-block;
+    animation: rotate 1s linear infinite paused;
+}
+
+.thermal-btn:active .refresh-icon {
+    animation-play-state: running;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Toast notifications */
+.thermal-toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.thermal-toast {
+    padding: 16px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--thermal-shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 300px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.thermal-toast.success {
+    border-left: 4px solid var(--thermal-success);
+}
+
+.thermal-toast.error {
+    border-left: 4px solid var(--thermal-danger);
+}
+
+.thermal-toast.info {
+    border-left: 4px solid var(--thermal-primary);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .thermal-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+    
+    .thermal-right-section {
+        order: 2;
+    }
+    
+    .thermal-recordings-section {
+        order: 3;
+    }
+}
+
+@media (max-width: 768px) {
+    .thermal-container {
+        padding: 16px;
+        gap: 16px;
+    }
+    
+    .thermal-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .temperature-stats {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .temperature-stats span {
+        font-size: 0.8125rem;
+        padding: 4px 10px;
+    }
+    
+    .chart-container {
+        padding: 16px;
+    }
+    
+    .recording-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .recording-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

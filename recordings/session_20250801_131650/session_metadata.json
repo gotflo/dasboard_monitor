@@ -1,0 +1,47 @@
+{
+  "session_id": "20250801_131650",
+  "start_time": "2025-08-01T13:16:50.784357",
+  "devices_connected": {
+    "polar": {
+      "connected": false,
+      "devices": []
+    },
+    "neurosity": {
+      "connected": false,
+      "battery": null,
+      "charging": false
+    },
+    "thermal": {
+      "connected": false,
+      "capturing": false
+    },
+    "gazepoint": {
+      "connected": false,
+      "calibrated": false,
+      "tracking_status": "none"
+    },
+    "thought_capture": {
+      "ready": true,
+      "recording": false,
+      "paused": false
+    }
+  },
+  "recording_config": {
+    "base_path": "recordings",
+    "create_session_folder": true,
+    "include_thought_capture": false,
+    "auto_create_missing_folders": true,
+    "session_metadata": true
+  },
+  "modules_available": {
+    "polar": true,
+    "neurosity": true,
+    "thermal": true,
+    "gazepoint": true,
+    "thought_capture": false
+  },
+  "end_time": "2025-08-01T13:17:39.239543",
+  "duration": 48.452182,
+  "total_samples": 0,
+  "modules_stopped": {}
+}

@@ -2,6 +2,7 @@
 """
 WebSocket Manager - BioMedical Hub
 Gestionnaire centralisé pour toutes les communications WebSocket
+Version corrigée avec broadcast amélioré
 """
 
 from flask_socketio import SocketIO, emit, join_room, leave_room
@@ -21,6 +22,7 @@ class WebSocketManager:
         self.connected_clients = {}
         self.active_modules = {}
         self.event_handlers = {}
+        self.broadcast_subscriptions = {}  # NEW: Track broadcast subscriptions
         
         if app is not None:
             self.init_app(app)
@@ -50,6 +52,7 @@ class WebSocketManager:
                 'connected_at': datetime.now().isoformat(),
                 'current_module': None,
                 'subscriptions': [],
+                'broadcast_subscriptions': [],  # NEW
                 'ip': self._get_client_ip(),
                 'user_agent': self._get_user_agent()
             }
@@ -103,6 +106,32 @@ class WebSocketManager:
                     'module': module_name,
                     'timestamp': datetime.now().isoformat()
                 })
+        
+        @self.socketio.on('subscribe_to_broadcast')
+        def handle_broadcast_subscription(data):
+            client_id = self._get_client_id()
+            modules = data.get('modules', [])
+            
+            # Track broadcast subscriptions for this client
+            if client_id in self.connected_clients:
+                self.connected_clients[client_id]['broadcast_subscriptions'] = modules
+            
+            for module_name in modules:
+                # Ajouter le client à la room de broadcast du module
+                room_name = f"broadcast_{module_name}"
+                join_room(room_name)
+                
+                # Track in broadcast_subscriptions
+                if module_name not in self.broadcast_subscriptions:
+                    self.broadcast_subscriptions[module_name] = set()
+                self.broadcast_subscriptions[module_name].add(client_id)
+                
+                logger.info(f"Client {client_id} abonné aux broadcasts de {module_name}")
+            
+            self.emit_to_current_client('broadcast_subscription_confirmed', {
+                'modules': modules,
+                'timestamp': datetime.now().isoformat()
+            })
     
     def register_module_events(self, module_name, event_handlers):
         """Enregistrer les événements spécifiques à un module
@@ -134,16 +163,57 @@ class WebSocketManager:
         """Émettre un événement à tous les clients d'un module"""
         room_name = f"module_{module_name}"
         self.socketio.emit(event, data, room=room_name)
-        logger.info(f"Événement {event} émis au module {module_name}")
+        logger.debug(f"Événement {event} émis au module {module_name}")
     
     def broadcast(self, event, data):
-        """Diffuser un événement à tous les clients connectés"""
-        self.socketio.emit(event, data, broadcast=True)
-        logger.info(f"Événement {event} diffusé à tous les clients")
+        """Diffuser un événement à tous les clients et aux rooms de broadcast appropriées
+
+        Cette méthode émet l'événement de deux façons :
+        1. À tous les clients connectés (broadcast global)
+        2. Aux clients abonnés au broadcast du module spécifique
+        """
+        # Émettre à tous les clients connectés
+        self.socketio.emit(event, data)
+        
+        # Déterminer le module à partir de l'événement
+        module_name = None
+        if event.startswith('polar_'):
+            module_name = 'polar'
+        elif event.startswith('neurosity_'):
+            module_name = 'neurosity'
+        elif event.startswith('thermal_'):
+            module_name = 'thermal_camera'
+        elif event.startswith('gazepoint_'):
+            module_name = 'gazepoint'
+        
+        # Émettre aussi à la room de broadcast du module si applicable
+        if module_name:
+            broadcast_room = f"broadcast_{module_name}"
+            self.socketio.emit(event, data, room=broadcast_room)
+            
+            # Log détaillé pour debug
+            subscribers_count = len(self.broadcast_subscriptions.get(module_name, set()))
+            logger.info(f"Broadcast {event} -> tous les clients + {subscribers_count} abonnés à {broadcast_room}")
+        else:
+            logger.info(f"Broadcast {event} -> tous les clients")
+    
+    def emit_to_broadcast_subscribers(self, module_name, event, data):
+        """Émettre uniquement aux clients abonnés au broadcast d'un module"""
+        broadcast_room = f"broadcast_{module_name}"
+        self.socketio.emit(event, data, room=broadcast_room)
+        logger.debug(f"Événement {event} émis aux abonnés broadcast de {module_name}")
     
     def get_module_clients(self, module_name):
         """Récupérer la liste des clients connectés à un module"""
-        return self.active_modules.get(module_name, {}).get('clients', [])
+        clients = []
+        for client_id, info in self.connected_clients.items():
+            if module_name in info.get('subscriptions', []):
+                clients.append(client_id)
+        return clients
+    
+    def get_broadcast_subscribers(self, module_name):
+        """Récupérer la liste des clients abonnés au broadcast d'un module"""
+        return list(self.broadcast_subscriptions.get(module_name, set()))
     
     def get_client_info(self, client_id):
         """Récupérer les informations d'un client"""
@@ -155,7 +225,10 @@ class WebSocketManager:
     
     def get_active_modules_count(self):
         """Récupérer le nombre de modules actifs"""
-        return len(self.active_modules)
+        active_modules = set()
+        for client_info in self.connected_clients.values():
+            active_modules.update(client_info.get('subscriptions', []))
+        return len(active_modules)
     
     def _subscribe_client_to_module(self, client_id, module_name):
         """Abonner un client à un module"""
@@ -220,6 +293,14 @@ class WebSocketManager:
         for module_name in subscriptions:
             self._unsubscribe_client_from_module(client_id, module_name)
         
+        # Nettoyer les broadcast subscriptions
+        broadcast_subs = self.connected_clients[client_id].get('broadcast_subscriptions', [])
+        for module_name in broadcast_subs:
+            if module_name in self.broadcast_subscriptions:
+                self.broadcast_subscriptions[module_name].discard(client_id)
+                if not self.broadcast_subscriptions[module_name]:
+                    del self.broadcast_subscriptions[module_name]
+        
         # Supprimer le client
         del self.connected_clients[client_id]
     
@@ -243,7 +324,11 @@ class WebSocketManager:
         return {
             'timestamp': datetime.now().isoformat(),
             'connected_clients': len(self.connected_clients),
-            'active_modules': len(self.active_modules),
+            'active_modules': self.get_active_modules_count(),
+            'broadcast_subscriptions': {
+                module: len(subscribers)
+                for module, subscribers in self.broadcast_subscriptions.items()
+            },
             'version': '1.0.0'
         }
 

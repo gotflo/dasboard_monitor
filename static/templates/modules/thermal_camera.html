@@ -1,7 +1,85 @@
-<!-- Template Module Caméra Thermique -->
-<div class="module-container">
-    <div class="module-content">
-        <h1 class="module-title">Caméra Thermique</h1>
-        <p class="module-subtitle">Détection IR</p>
+<!-- Module Caméra Thermique -->
+<div class="thermal-container">
+    <!-- Section gauche : Visualisation -->
+    <div class="thermal-left-section">
+        <!-- Card de visualisation -->
+        <div class="thermal-card">
+            <div class="thermal-card-header">
+                <h3 class="thermal-card-title">Flux Thermique en Direct</h3>
+                <div class="thermal-status">
+                    <span class="status-indicator" id="thermal-status"></span>
+                    <span class="status-text">Hors ligne</span>
+                </div>
+            </div>
+            <div class="thermal-video-container">
+                <canvas id="thermal-canvas" class="thermal-canvas"></canvas>
+                <div class="thermal-overlay" id="thermal-overlay">
+                    <div class="overlay-content">
+                        <div class="pulse-animation"></div>
+                        <p>Caméra thermique déconnectée</p>
+                        <p class="overlay-subtitle">Cliquez sur démarrer pour activer</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bouton de contrôle -->
+        <button class="thermal-control-btn" id="thermal-toggle-btn">
+            <span class="btn-icon start-icon">▶</span>
+            <span class="btn-icon stop-icon" style="display: none;">◼</span>
+            <span class="btn-text">Démarrer la caméra</span>
+        </button>
+    </div>
+    
+    <!-- Section droite : Graphique et contrôles -->
+    <div class="thermal-right-section">
+        <!-- Card du graphique -->
+        <div class="thermal-card graph-card">
+            <div class="thermal-card-header">
+                <h3 class="thermal-card-title">Températures en Temps Réel</h3>
+                <div class="temperature-stats">
+                    <span class="temp-avg">Moy: --°C</span>
+                    <span class="temp-max">Max: --°C</span>
+                    <span class="temp-min">Min: --°C</span>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="thermal-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Contrôles d'enregistrement -->
+        <div class="recording-controls">
+            <button class="thermal-btn secondary" id="recording-toggle-btn" disabled>
+                <span class="recording-indicator"></span>
+                <span class="btn-text">Démarrer l'enregistrement</span>
+            </button>
+            <div class="recording-info" id="recording-info" style="display: none;">
+                <span class="recording-time">00:00:00</span>
+                <span class="thermal_recording-size">0 lignes</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Section complète en bas : Liste des enregistrements -->
+    <div class="thermal-recordings-section">
+        <div class="thermal-card recordings-card">
+            <div class="thermal-card-header">
+                <h3 class="thermal-card-title">Enregistrements CSV</h3>
+                <button class="thermal-btn small" id="refresh-recordings-btn">
+                    <span class="refresh-icon">↻</span>
+                    Actualiser
+                </button>
+            </div>
+            <div class="recordings-list" id="recordings-list">
+                <div class="no-recordings">
+                    <p>Aucun enregistrement disponible</p>
+                    <p class="text-muted">Les fichiers CSV apparaîtront ici après enregistrement</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- Toast container pour les notifications -->
+<div class="thermal-toast-container" id="thermal-toast-container"></div>

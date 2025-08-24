@@ -1,0 +1,91 @@
+{
+  "filename": "recording_20250814_113035.webm",
+  "timestamp": "20250814_113035",
+  "date": "2025-08-14T11:30:35.158721",
+  "duration": 1755185435,
+  "size": 282233,
+  "transcription": {
+    "text": " Bonjour, la séance est en test. Pour voir la précision du modèle médium. Ensuite après nous allons passer avec la précision du modèle large.",
+    "segments": [
+      {
+        "id": 0,
+        "seek": 0,
+        "start": 0.0,
+        "end": 3.0,
+        "text": " Bonjour, la séance est en test.",
+        "tokens": [
+          50364,
+          25431,
+          11,
+          635,
+          7910,
+          719,
+          871,
+          465,
+          1500,
+          13,
+          50514
+        ],
+        "temperature": 0.0,
+        "avg_logprob": -0.4847791133782802,
+        "compression_ratio": 1.3243243243243243,
+        "no_speech_prob": 0.06589563935995102
+      },
+      {
+        "id": 1,
+        "seek": 0,
+        "start": 3.0,
+        "end": 10.0,
+        "text": " Pour voir la précision du modèle médium.",
+        "tokens": [
+          50514,
+          8732,
+          10695,
+          635,
+          23107,
+          1991,
+          1581,
+          45631,
+          16978,
+          2197,
+          13,
+          50864
+        ],
+        "temperature": 0.0,
+        "avg_logprob": -0.4847791133782802,
+        "compression_ratio": 1.3243243243243243,
+        "no_speech_prob": 0.06589563935995102
+      },
+      {
+        "id": 2,
+        "seek": 0,
+        "start": 10.0,
+        "end": 15.0,
+        "text": " Ensuite après nous allons passer avec la précision du modèle large.",
+        "tokens": [
+          50864,
+          37366,
+          13274,
+          4666,
+          34405,
+          18509,
+          4163,
+          635,
+          23107,
+          1991,
+          1581,
+          45631,
+          2416,
+          13,
+          51114
+        ],
+        "temperature": 0.0,
+        "avg_logprob": -0.4847791133782802,
+        "compression_ratio": 1.3243243243243243,
+        "no_speech_prob": 0.06589563935995102
+      }
+    ],
+    "language": "fr",
+    "timestamp": "2025-08-14T11:30:37.062654"
+  }
+}

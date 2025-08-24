@@ -4,3 +4,5 @@ neurosity
 python-dotenv
 pandas
 numpy
+mediapipe
+opencv-python

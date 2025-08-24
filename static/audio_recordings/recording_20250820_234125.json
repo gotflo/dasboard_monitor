@@ -1,0 +1,48 @@
+{
+  "filename": "recording_20250820_234125.webm",
+  "timestamp": "20250820_234125",
+  "date": "2025-08-20T23:41:25.578106",
+  "duration": 1755747685,
+  "size": 118013,
+  "transcription": {
+    "text": "Bonjour, je fais le test de Truth Capture. Capture de la pensée.",
+    "raw_text": " Bonjour, je fais le test de Truth Capture. Capture de la pensée.",
+    "segments": [
+      {
+        "id": 0,
+        "seek": 0,
+        "start": 0.0,
+        "end": 7.32,
+        "text": " Bonjour, je fais le test de Truth Capture. Capture de la pensée.",
+        "tokens": [
+          25431,
+          11,
+          1506,
+          12153,
+          476,
+          1500,
+          368,
+          20522,
+          9480,
+          540,
+          13,
+          9480,
+          540,
+          368,
+          635,
+          6099,
+          3856,
+          13
+        ],
+        "temperature": 0,
+        "avg_logprob": -0.38107600964997945,
+        "compression_ratio": 1.0,
+        "no_speech_prob": 0.058253686875104904
+      }
+    ],
+    "language": "fr",
+    "timestamp": "2025-08-20T23:42:17.544697",
+    "model_used": "base",
+    "device": "cuda"
+  }
+}

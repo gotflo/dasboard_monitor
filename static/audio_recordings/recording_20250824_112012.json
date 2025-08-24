@@ -1,0 +1,39 @@
+{
+  "filename": "recording_20250824_112012.webm",
+  "timestamp": "20250824_112012",
+  "date": "2025-08-24T11:20:12.882904",
+  "duration": 1756048812,
+  "size": 116081,
+  "transcription": {
+    "text": "Test avec la détection de la pensée",
+    "raw_text": " Test avec la détection de la pensée",
+    "segments": [
+      {
+        "id": 0,
+        "seek": 0,
+        "start": 0.0,
+        "end": 7.2,
+        "text": " Test avec la détection de la pensée",
+        "tokens": [
+          9279,
+          4163,
+          635,
+          22312,
+          10183,
+          368,
+          635,
+          6099,
+          3856
+        ],
+        "temperature": 0,
+        "avg_logprob": -0.12486238479614258,
+        "compression_ratio": 0.8604651162790697,
+        "no_speech_prob": 0.07558136433362961
+      }
+    ],
+    "language": "fr",
+    "timestamp": "2025-08-24T11:21:18.761287",
+    "model_used": "base",
+    "device": "cuda"
+  }
+}

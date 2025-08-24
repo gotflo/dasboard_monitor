@@ -1,0 +1,58 @@
+{
+  "filename": "recording_20250815_125727.webm",
+  "timestamp": "20250815_125727",
+  "date": "2025-08-15T12:57:27.357098",
+  "duration": 1755277047,
+  "size": 221375,
+  "transcription": {
+    "text": "donc là c'est un petit test pour pouvoir voir la transcription de l'audio vers du test avec le modèle usb de gpt",
+    "raw_text": " donc là c'est un petit test pour pouvoir voir la transcription de l'audio vers du test avec le modèle usb de gpt",
+    "segments": [
+      {
+        "id": 0,
+        "seek": 0,
+        "start": 0.0,
+        "end": 13.74,
+        "text": " donc là c'est un petit test pour pouvoir voir la transcription de l'audio vers du test avec le modèle usb de gpt",
+        "tokens": [
+          5926,
+          3684,
+          269,
+          6,
+          377,
+          517,
+          9686,
+          1500,
+          2016,
+          14874,
+          10695,
+          635,
+          35288,
+          368,
+          287,
+          6,
+          46069,
+          1774,
+          1581,
+          1500,
+          4163,
+          476,
+          45631,
+          505,
+          65,
+          368,
+          290,
+          662
+        ],
+        "temperature": 0,
+        "avg_logprob": -0.18516505997756433,
+        "compression_ratio": 1.2127659574468086,
+        "no_speech_prob": 0.04509306326508522
+      }
+    ],
+    "language": "fr",
+    "timestamp": "2025-08-15T12:58:18.251042",
+    "model_used": "base",
+    "device": "cuda"
+  }
+}
